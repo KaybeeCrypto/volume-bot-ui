@@ -209,7 +209,7 @@ export default function VolumeBotDashboardPage() {
             >
               {menuLogoutHover
                 ? "Logout"
-                : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+                : `${session.address.slice(0, 4)}...`}
             </button>
           ) : (
             <button
@@ -265,7 +265,7 @@ export default function VolumeBotDashboardPage() {
             >
               {headerLogoutHover
                 ? "Logout"
-                : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+                : `${session.address.slice(0, 4)}...`}
             </button>
           ) : null}
         </div>

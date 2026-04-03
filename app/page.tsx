@@ -183,7 +183,7 @@ export default function Home() {
               >
                 {menuLogoutHover
                   ? "Logout"
-                  : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+                  : `${session.address.slice(0, 4)}...`}
               </button>
             ) : (
               <button
@@ -240,7 +240,7 @@ export default function Home() {
             >
               {headerLogoutHover
                 ? "Logout"
-                : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+                : `${session.address.slice(0, 4)}...`}
             </button>
           ) : (
             <button
