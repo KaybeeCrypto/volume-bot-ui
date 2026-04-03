@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useWallet,
-  WalletName,
-} from "@solana/wallet-adapter-react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import type { WalletName } from "@solana/wallet-adapter-base";
 import bs58 from "bs58";
 
 type Props = {
