@@ -6,61 +6,60 @@ import Image from "next/image";
 import LogoutButton from "@/components/LogoutButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
 
-      export default function VolumeBotDashboardPage() {
-        const router = useRouter();
-        const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
-        const [menuOpen, setMenuOpen] = useState(false);
-        const [loginOpen, setLoginOpen] = useState(false);
-        const { session, loading: sessionLoading } = useAuthSession();
+export default function VolumeBotDashboardPage() {
+  const router = useRouter();
+  const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const { session, loading: sessionLoading } = useAuthSession();
 
-        useEffect(() => {
-          if (menuOpen) {
-            document.body.style.overflow = "hidden";
-          } else {
-            document.body.style.overflow = "";
-          }
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
 
-          return () => {
-            document.body.style.overflow = "";
-          };
-        }, [menuOpen]);
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
 
-        useEffect(() => {
-          if (!sessionLoading && !session) {
-            router.replace("/");
-          }
-        }, [sessionLoading, session, router]);
+  useEffect(() => {
+    if (!sessionLoading && !session) {
+      router.replace("/");
+    }
+  }, [sessionLoading, session, router]);
 
-        const summary = useMemo(
-          () => ({
-            tokenName: "BOTHEAD",
-            tokenAddress: "7xKp...93Lm",
-            completedCycles: 128,
-            cycleStatus: sessionStatus,
-            perBuyRate: "0.15 SOL",
-            dailyUsed: 12,
-            dailyLimit: 20,
-            activeWallets: 18,
-            totalWallets: 24,
-            buyCycles: 64,
-            sellCycles: 64,
-            maxCycles: 200,
-            idleWallets: 4,
-            failedWallets: 2,
-            remainingToday: 8,
-            estimatedCyclesLeft: 53,
-          }),
-          [sessionStatus]
-        );
+  const summary = useMemo(
+    () => ({
+      tokenName: "BOTHEAD",
+      tokenAddress: "7xKp...93Lm",
+      completedCycles: 128,
+      cycleStatus: sessionStatus,
+      perBuyRate: "0.15 SOL",
+      dailyUsed: 12,
+      dailyLimit: 20,
+      activeWallets: 18,
+      totalWallets: 24,
+      buyCycles: 64,
+      sellCycles: 64,
+      maxCycles: 200,
+      idleWallets: 4,
+      failedWallets: 2,
+      remainingToday: 8,
+      estimatedCyclesLeft: 53,
+    }),
+    [sessionStatus]
+  );
 
-        if (sessionLoading || !session) {
-          return (
-            <main className="flex min-h-screen items-center justify-center bg-white text-black">
-              <p className="text-sm text-black/60">Checking session...</p>
-            </main>
-          );
-        }
-
+  if (sessionLoading || !session) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white text-black">
+        <p className="text-sm text-black/60">Checking session...</p>
+      </main>
+    );
+  }
 
   const recentActivity = [
     {
@@ -125,12 +124,13 @@ import { useAuthSession } from "@/hooks/useAuthSession";
   const cycleUsagePercent = Math.min((summary.completedCycles / summary.maxCycles) * 100, 100);
 
   if (sessionLoading || !session) {
-      return (
-        <main className="min-h-screen bg-white text-black flex items-center justify-center">
-          <p className="text-sm text-black/60">Checking session...</p>
-        </main>
-      );
-    }
+    return (
+      <main className="min-h-screen bg-white text-black flex items-center justify-center">
+        <p className="text-sm text-black/60">Checking session...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-white text-black">
       {menuOpen && (
@@ -226,7 +226,12 @@ import { useAuthSession } from "@/hooks/useAuthSession";
         </button>
 
         {/* Center: Logo */}
-        <div className="absolute left-1/2 -translate-x-1/2">
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="absolute left-1/2 -translate-x-1/2 transition hover:opacity-90"
+          aria-label="Go to main page"
+        >
           <Image
             src="/logo.png"
             alt="VolumeBot logo"
@@ -234,7 +239,7 @@ import { useAuthSession } from "@/hooks/useAuthSession";
             height={60}
             priority
           />
-        </div>
+        </button>
 
         <div className="ml-auto">
           {sessionLoading ? null : session ? (

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import WalletPicker from "@/components/WalletPicker";
 import { useWallet } from "@solana/wallet-adapter-react";
 import LogoutButton from "@/components/LogoutButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
 
 export default function Home() {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const { connected } = useWallet();
@@ -18,6 +20,15 @@ export default function Home() {
       setLoginOpen(false);
     }
   }, [connected]);
+
+  const handleHeaderLogoClick = () => {
+    if (window.location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    router.push("/");
+  };
 
   return (
     <main className="min-h-screen bg-white text-black">
@@ -179,7 +190,12 @@ export default function Home() {
         </button>
 
         {/* Center: Logo */}
-        <div className="absolute left-1/2 -translate-x-1/2">
+        <button
+          type="button"
+          onClick={handleHeaderLogoClick}
+          className="absolute left-1/2 -translate-x-1/2 transition hover:opacity-90"
+          aria-label="Go to main page"
+        >
           <Image
             src="/logo.png"
             alt="VolumeBot logo"
@@ -187,7 +203,7 @@ export default function Home() {
             height={60}
             priority
           />
-        </div>
+        </button>
 
         <div className="ml-auto">
           {sessionLoading ? null : session ? (
