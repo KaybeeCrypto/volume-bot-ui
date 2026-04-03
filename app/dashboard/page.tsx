@@ -1,0 +1,551 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import LogoutButton from "@/components/LogoutButton";
+import { useAuthSession } from "@/hooks/useAuthSession";
+
+      export default function VolumeBotDashboardPage() {
+        const router = useRouter();
+        const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
+        const [menuOpen, setMenuOpen] = useState(false);
+        const [loginOpen, setLoginOpen] = useState(false);
+        const { session, loading: sessionLoading } = useAuthSession();
+
+        useEffect(() => {
+          if (menuOpen) {
+            document.body.style.overflow = "hidden";
+          } else {
+            document.body.style.overflow = "";
+          }
+
+          return () => {
+            document.body.style.overflow = "";
+          };
+        }, [menuOpen]);
+
+        useEffect(() => {
+          if (!sessionLoading && !session) {
+            router.replace("/");
+          }
+        }, [sessionLoading, session, router]);
+
+        const summary = useMemo(
+          () => ({
+            tokenName: "BOTHEAD",
+            tokenAddress: "7xKp...93Lm",
+            completedCycles: 128,
+            cycleStatus: sessionStatus,
+            perBuyRate: "0.15 SOL",
+            dailyUsed: 12,
+            dailyLimit: 20,
+            activeWallets: 18,
+            totalWallets: 24,
+            buyCycles: 64,
+            sellCycles: 64,
+            maxCycles: 200,
+            idleWallets: 4,
+            failedWallets: 2,
+            remainingToday: 8,
+            estimatedCyclesLeft: 53,
+          }),
+          [sessionStatus]
+        );
+
+        if (sessionLoading || !session) {
+          return (
+            <main className="flex min-h-screen items-center justify-center bg-white text-black">
+              <p className="text-sm text-black/60">Checking session...</p>
+            </main>
+          );
+        }
+
+
+  const recentActivity = [
+    {
+      time: "14:32:08",
+      wallet: "4rYd...8Pw2",
+      action: "Buy executed",
+      amount: "0.15 SOL",
+      token: "BOTHEAD",
+      status: "Success",
+    },
+    {
+      time: "14:31:42",
+      wallet: "8LaP...2Mn9",
+      action: "Sell executed",
+      amount: "0.14 SOL",
+      token: "BOTHEAD",
+      status: "Success",
+    },
+    {
+      time: "14:30:51",
+      wallet: "3KfQ...7Hs1",
+      action: "Cycle completed",
+      amount: "--",
+      token: "BOTHEAD",
+      status: "Success",
+    },
+    {
+      time: "14:29:10",
+      wallet: "9RtM...5Qa4",
+      action: "Wallet skipped",
+      amount: "--",
+      token: "BOTHEAD",
+      status: "Limited",
+    },
+    {
+      time: "14:27:36",
+      wallet: "2VnB...1Je8",
+      action: "Buy executed",
+      amount: "0.15 SOL",
+      token: "BOTHEAD",
+      status: "Success",
+    },
+    {
+      time: "14:25:03",
+      wallet: "6ZkD...4Pw7",
+      action: "Sell executed",
+      amount: "0.15 SOL",
+      token: "BOTHEAD",
+      status: "Success",
+    },
+  ];
+
+  const walletRows = [
+    { address: "4rYd...8Pw2", status: "Active", lastAction: "Buy", lastTrade: "14:32" },
+    { address: "8LaP...2Mn9", status: "Active", lastAction: "Sell", lastTrade: "14:31" },
+    { address: "3KfQ...7Hs1", status: "Idle", lastAction: "Waiting", lastTrade: "14:30" },
+    { address: "9RtM...5Qa4", status: "Failed", lastAction: "Skipped", lastTrade: "14:29" },
+    { address: "2VnB...1Je8", status: "Active", lastAction: "Buy", lastTrade: "14:27" },
+  ];
+
+  const dailyUsagePercent = Math.min((summary.dailyUsed / summary.dailyLimit) * 100, 100);
+  const cycleUsagePercent = Math.min((summary.completedCycles / summary.maxCycles) * 100, 100);
+
+  if (sessionLoading || !session) {
+      return (
+        <main className="min-h-screen bg-white text-black flex items-center justify-center">
+          <p className="text-sm text-black/60">Checking session...</p>
+        </main>
+      );
+    }
+  return (
+    <main className="min-h-screen bg-white text-black">
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
+      <div
+        className={`fixed top-0 left-0 z-50 flex h-full w-80 flex-col bg-white text-black shadow-2xl transform transition-transform duration-300 ${
+          menuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-black/10 px-5 py-5">
+          <div>
+            <p className="text-sm font-semibold tracking-[0.18em] text-black/55">VOLUME BOT</p>
+            <p className="text-xs text-black/45">Dashboard Menu</p>
+          </div>
+
+          <button
+            onClick={() => setMenuOpen(false)}
+            className="rounded-md p-2 transition hover:bg-black/5"
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
+        </div>
+
+        <nav className="flex flex-col px-4 py-4">
+          <a
+            href="#overview"
+            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
+            onClick={() => setMenuOpen(false)}
+          >
+            Overview
+          </a>
+          <a
+            href="#controls"
+            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
+            onClick={() => setMenuOpen(false)}
+          >
+            Controls
+          </a>
+          <a
+            href="#wallets"
+            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
+            onClick={() => setMenuOpen(false)}
+          >
+            Wallets
+          </a>
+          <a
+            href="#activity"
+            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
+            onClick={() => setMenuOpen(false)}
+          >
+            Activity
+          </a>
+        </nav>
+
+        <div className="mt-auto border-t border-black/10 p-4">
+          {sessionLoading ? null : session ? (
+            <div className="space-y-3">
+              <div className="w-full rounded-xl border border-black px-4 py-3 text-center text-sm font-semibold text-black">
+                {`${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+              </div>
+              <LogoutButton />
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                setLoginOpen(true);
+              }}
+              className="w-full rounded-xl border border-black px-4 py-3 text-sm font-medium transition hover:bg-black hover:text-white"
+            >
+              Connect Wallet
+            </button>
+          )}
+        </div>
+      </div>
+
+      <header className="sticky top-0 z-30 relative flex items-center h-24 px-4 border-b border-gray-200 bg-white/90 backdrop-blur-md">
+        {/* Left: Hamburger */}
+        <button
+          className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-md transition hover:bg-gray-100"
+          aria-label="Open menu"
+          onClick={() => setMenuOpen(true)}
+        >
+          <span className="block w-6 h-0.5 bg-black"></span>
+          <span className="block w-6 h-0.5 bg-black"></span>
+          <span className="block w-6 h-0.5 bg-black"></span>
+        </button>
+
+        {/* Center: Logo */}
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <Image
+            src="/logo.png"
+            alt="VolumeBot logo"
+            width={300}
+            height={60}
+            priority
+          />
+        </div>
+
+        <div className="ml-auto">
+          {sessionLoading ? null : session ? (
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg border border-black px-4 py-2 font-semibold text-black">
+                {`${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+              </div>
+              <LogoutButton />
+            </div>
+          ) : (
+            <button
+              onClick={() => setLoginOpen(true)}
+              className="rounded-lg border border-black px-5 py-2 font-semibold transition hover:bg-black hover:text-white"
+            >
+              Connect Wallet
+            </button>
+          )}
+        </div>
+      </header>
+
+      <section className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8 lg:py-14">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="mb-3 inline-flex rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-black/55">
+                Live session overview
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Volume Bot Dashboard</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-black/60 sm:text-base">
+                Monitor current token session, wallet participation, buy and sell cycle flow, and daily usage limits from one control panel.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setSessionStatus("Running")}
+                className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+              >
+                Start Bot
+              </button>
+              <button
+                onClick={() => setSessionStatus("Paused")}
+                className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+              >
+                Pause
+              </button>
+              <button
+                onClick={() => setSessionStatus("Stopped")}
+                className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black"
+              >
+                Stop
+              </button>
+            </div>
+          </div>
+
+          <div id="overview" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <KpiCard label="Token in Session" value={summary.tokenName} subvalue={summary.tokenAddress} />
+            <KpiCard label="Buy / Sell Cycles" value={String(summary.completedCycles)} subvalue={summary.cycleStatus} />
+            <KpiCard label="Per Buy Rate" value={summary.perBuyRate} subvalue="Current execution size" />
+            <KpiCard
+              label="Daily Limit"
+              value={`${summary.dailyUsed} / ${summary.dailyLimit} SOL`}
+              subvalue={`${Math.round(dailyUsagePercent)}% used today`}
+            />
+            <KpiCard
+              label="Active Wallets"
+              value={String(summary.activeWallets)}
+              subvalue={`${summary.totalWallets} wallets loaded`}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <SectionCard
+              id="controls"
+              title="Session / Bot Config"
+              description="Core runtime settings for the active token session."
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <InfoRow label="Token Used in Session" value={summary.tokenName} />
+                <InfoRow label="Token Address" value={summary.tokenAddress} />
+                <InfoRow label="Session Status" value={summary.cycleStatus} />
+                <InfoRow label="Per Buy Rate" value={summary.perBuyRate} />
+                <InfoRow label="Daily Limit" value={`${summary.dailyLimit} SOL`} />
+                <InfoRow label="Max Cycles" value={String(summary.maxCycles)} />
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.025] p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45">Session note</p>
+                <p className="mt-2 text-sm leading-6 text-black/65">
+                  This panel is set up as the visual home for your active Solana volume bot session. Later you can replace these display rows with editable inputs tied to backend config values.
+                </p>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Wallet Activity"
+              description="Track participating wallets and their most recent actions."
+              id="wallets"
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <MiniMetric label="Active" value={String(summary.activeWallets)} />
+                <MiniMetric label="Idle" value={String(summary.idleWallets)} />
+                <MiniMetric label="Failed" value={String(summary.failedWallets)} />
+              </div>
+
+              <div className="mt-6 overflow-hidden rounded-2xl border border-black/10">
+                <div className="grid grid-cols-4 border-b border-black/10 bg-black/[0.03] px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45">
+                  <span>Wallet</span>
+                  <span>Status</span>
+                  <span>Last Action</span>
+                  <span>Last Trade</span>
+                </div>
+                <div className="divide-y divide-black/10">
+                  {walletRows.map((wallet) => (
+                    <div key={wallet.address} className="grid grid-cols-4 px-4 py-3 text-sm text-black/75">
+                      <span className="font-medium text-black">{wallet.address}</span>
+                      <span>
+                        <StatusBadge label={wallet.status} />
+                      </span>
+                      <span>{wallet.lastAction}</span>
+                      <span>{wallet.lastTrade}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Cycle Controls" description="Monitor progress across buy and sell execution loops.">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <InfoRow label="Buy Cycles" value={String(summary.buyCycles)} />
+                <InfoRow label="Sell Cycles" value={String(summary.sellCycles)} />
+                <InfoRow label="Completed Cycles" value={String(summary.completedCycles)} />
+                <InfoRow label="Max Cycles" value={String(summary.maxCycles)} />
+              </div>
+
+              <div className="mt-6 space-y-5">
+                <ProgressBlock
+                  label="Cycle progress"
+                  value={`${summary.completedCycles} / ${summary.maxCycles}`}
+                  percent={cycleUsagePercent}
+                />
+                <ProgressBlock
+                  label="Daily volume usage"
+                  value={`${summary.dailyUsed} / ${summary.dailyLimit} SOL`}
+                  percent={dailyUsagePercent}
+                />
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90">
+                  Start New Cycle Batch
+                </button>
+                <button className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white">
+                  Pause Execution
+                </button>
+                <button className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black">
+                  Reset Counters
+                </button>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Limits & Usage" description="Daily cap and remaining execution headroom.">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <InfoRow label="Daily Cap" value={`${summary.dailyLimit} SOL`} />
+                <InfoRow label="Used Today" value={`${summary.dailyUsed} SOL`} />
+                <InfoRow label="Remaining Today" value={`${summary.remainingToday} SOL`} />
+                <InfoRow label="Estimated Cycles Left" value={String(summary.estimatedCyclesLeft)} />
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.025] p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Usage condition</p>
+                    <p className="mt-1 text-sm text-black/55">The dashboard keeps the most important throughput numbers visible at all times.</p>
+                  </div>
+                  <StatusBadge label={summary.dailyUsed >= summary.dailyLimit ? "Limit Reached" : "Within Limit"} />
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+
+          <SectionCard id="activity" title="Recent Activity" description="Latest actions executed by the bot across active wallets.">
+            <div className="overflow-x-auto rounded-2xl border border-black/10">
+              <table className="min-w-full border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="bg-black/[0.03] text-xs uppercase tracking-[0.16em] text-black/45">
+                    <th className="px-4 py-3 font-medium">Time</th>
+                    <th className="px-4 py-3 font-medium">Wallet</th>
+                    <th className="px-4 py-3 font-medium">Action</th>
+                    <th className="px-4 py-3 font-medium">Amount</th>
+                    <th className="px-4 py-3 font-medium">Token</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentActivity.map((item, index) => (
+                    <tr key={`${item.wallet}-${index}`} className="text-sm text-black/75">
+                      <td className="border-t border-black/10 px-4 py-4">{item.time}</td>
+                      <td className="border-t border-black/10 px-4 py-4 font-medium text-black">{item.wallet}</td>
+                      <td className="border-t border-black/10 px-4 py-4">{item.action}</td>
+                      <td className="border-t border-black/10 px-4 py-4">{item.amount}</td>
+                      <td className="border-t border-black/10 px-4 py-4">{item.token}</td>
+                      <td className="border-t border-black/10 px-4 py-4">
+                        <StatusBadge label={item.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+type KpiCardProps = {
+  label: string;
+  value: string;
+  subvalue: string;
+};
+
+function KpiCard({ label, value, subvalue }: KpiCardProps) {
+  return (
+    <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+      <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45">{label}</p>
+      <p className="mt-4 text-2xl font-semibold tracking-tight text-black">{value}</p>
+      <p className="mt-2 text-sm text-black/55">{subvalue}</p>
+    </div>
+  );
+}
+
+type SectionCardProps = {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  id?: string;
+};
+
+function SectionCard({ title, description, children, id }: SectionCardProps) {
+  return (
+    <section
+      id={id}
+      className="rounded-[28px] border border-black/10 bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)] sm:p-7"
+    >
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold tracking-tight text-black">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-black/58">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+type InfoRowProps = {
+  label: string;
+  value: string;
+};
+
+function InfoRow({ label, value }: InfoRowProps) {
+  return (
+    <div className="rounded-2xl border border-black/10 bg-white p-4">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45">{label}</p>
+      <p className="mt-3 text-base font-semibold text-black">{value}</p>
+    </div>
+  );
+}
+
+type MiniMetricProps = {
+  label: string;
+  value: string;
+};
+
+function MiniMetric({ label, value }: MiniMetricProps) {
+  return (
+    <div className="rounded-2xl border border-black/10 bg-white p-4">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45">{label}</p>
+      <p className="mt-3 text-xl font-semibold text-black">{value}</p>
+    </div>
+  );
+}
+
+type ProgressBlockProps = {
+  label: string;
+  value: string;
+  percent: number;
+};
+
+function ProgressBlock({ label, value, percent }: ProgressBlockProps) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-4">
+        <p className="text-sm font-medium text-black">{label}</p>
+        <p className="text-sm text-black/55">{value}</p>
+      </div>
+      <div className="h-3 w-full overflow-hidden rounded-full bg-black/8">
+        <div className="h-full rounded-full bg-black transition-all" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
+}
+
+type StatusBadgeProps = {
+  label: string;
+};
+
+function StatusBadge({ label }: StatusBadgeProps) {
+  return (
+    <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
+      {label}
+    </span>
+  );
+}
