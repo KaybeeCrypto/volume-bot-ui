@@ -243,20 +243,10 @@ export default function VolumeBotDashboardPage() {
 
         <div className="ml-auto">
           {sessionLoading ? null : session ? (
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg border border-black px-4 py-2 font-semibold text-black">
-                {`${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
-              </div>
-              <LogoutButton />
-            </div>
-          ) : (
-            <button
-              onClick={() => setLoginOpen(true)}
-              className="rounded-lg border border-black px-5 py-2 font-semibold transition hover:bg-black hover:text-white"
-            >
-              Connect Wallet
+            <button className="rounded-lg border border-black px-5 py-2 font-semibold text-black">
+              {`${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
             </button>
-          )}
+          ) : null}
         </div>
       </header>
 
