@@ -5,13 +5,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import WalletPicker from "@/components/WalletPicker";
 import { useWallet } from "@solana/wallet-adapter-react";
-import LogoutButton from "@/components/LogoutButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
 
 export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [headerLogoutHover, setHeaderLogoutHover] = useState(false);
+  const [menuLogoutHover, setMenuLogoutHover] = useState(false);
   const { connected } = useWallet();
   const { session, loading: sessionLoading } = useAuthSession();
 
@@ -30,9 +31,19 @@ export default function Home() {
     router.push("/");
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } finally {
+      router.replace("/");
+      router.refresh();
+    }
+  };
+
   return (
     <main className="min-h-screen bg-white text-black">
-      {/* Dark overlay */}
       {menuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40"
@@ -40,7 +51,6 @@ export default function Home() {
         />
       )}
 
-      {/* Login Modal */}
       {loginOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div
@@ -66,13 +76,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* Slide-in side menu */}
       <div
         className={`fixed top-0 left-0 z-50 flex h-full w-80 flex-col bg-slate-950 text-white shadow-2xl transform transition-transform duration-300 ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Top branding area */}
         <div className="border-b border-white/10 px-5 py-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -98,7 +106,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Navigation links */}
         <div className="flex-1 overflow-y-auto px-4 py-5">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
             Navigation
@@ -157,28 +164,43 @@ export default function Home() {
           </nav>
         </div>
 
-        {/* Bottom action area */}
         <div className="border-t border-white/10 px-4 py-4">
           <div className="flex flex-col gap-3">
             <button className="rounded-lg bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-cyan-300">
               Start Free Trial
             </button>
 
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                setLoginOpen(true);
-              }}
-              className="rounded-lg border border-white/20 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              Connect Wallet
-            </button>
+            {sessionLoading ? null : session ? (
+              <button
+                onMouseEnter={() => setMenuLogoutHover(true)}
+                onMouseLeave={() => setMenuLogoutHover(false)}
+                onClick={handleLogout}
+                className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                  menuLogoutHover
+                    ? "border-red-500 bg-red-500 text-white"
+                    : "border-white/20 text-white hover:bg-white/10"
+                }`}
+              >
+                {menuLogoutHover
+                  ? "Logout"
+                  : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setLoginOpen(true);
+                }}
+                className="rounded-lg border border-white/20 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Connect Wallet
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <header className="sticky top-0 z-30 relative flex items-center h-24 px-4 border-b border-gray-200 bg-white/90 backdrop-blur-md">
-        {/* Left: Hamburger */}
         <button
           className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-md transition hover:bg-gray-100"
           aria-label="Open menu"
@@ -189,7 +211,6 @@ export default function Home() {
           <span className="block w-6 h-0.5 bg-black"></span>
         </button>
 
-        {/* Center: Logo */}
         <button
           type="button"
           onClick={handleHeaderLogoClick}
@@ -207,8 +228,19 @@ export default function Home() {
 
         <div className="ml-auto">
           {sessionLoading ? null : session ? (
-            <button className="rounded-lg border border-black px-5 py-2 font-semibold text-black">
-              {`${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+            <button
+              onMouseEnter={() => setHeaderLogoutHover(true)}
+              onMouseLeave={() => setHeaderLogoutHover(false)}
+              onClick={handleLogout}
+              className={`rounded-lg border px-5 py-2 font-semibold transition ${
+                headerLogoutHover
+                  ? "border-red-600 bg-red-600 text-white"
+                  : "border-black text-black hover:bg-gray-100"
+              }`}
+            >
+              {headerLogoutHover
+                ? "Logout"
+                : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
             </button>
           ) : (
             <button
@@ -221,10 +253,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="px-6 py-28">
         <div className="mx-auto max-w-7xl flex flex-col-reverse items-center gap-10 md:flex-row md:justify-between">
-          {/* LEFT SIDE (TEXT) */}
           <div className="max-w-3xl text-center md:text-left">
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
               Solana Volume Automation
@@ -260,10 +290,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* RIGHT SIDE (IMAGE) */}
           <div className="flex w-full justify-center md:justify-end">
             <div className="relative flex h-[360px] w-[360px] items-center justify-center md:h-[520px] md:w-[520px]">
-              {/* Bot image */}
               <img
                 src="/logo_bothead.png"
                 alt="Bot logo"
@@ -304,7 +332,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works */}
       <section className="bg-slate-950 px-6 py-24 text-white">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
@@ -321,7 +348,6 @@ export default function Home() {
           </div>
 
           <div className="mt-16 grid gap-6 md:grid-cols-3">
-            {/* Card 1 */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-left shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-sm">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15 text-lg font-bold text-cyan-300">
                 1
@@ -335,7 +361,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Card 2 */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-left shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-sm">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-fuchsia-500/15 text-lg font-bold text-fuchsia-300">
                 2
@@ -349,7 +374,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Card 3 */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-left shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-sm">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15 text-lg font-bold text-cyan-300">
                 3
@@ -366,7 +390,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing */}
       <section className="bg-white px-6 py-24 text-black">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
@@ -383,7 +406,6 @@ export default function Home() {
           </div>
 
           <div className="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {/* Trial */}
             <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Trial
@@ -412,7 +434,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Basic */}
             <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Basic
@@ -441,7 +462,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Standard - highlighted */}
             <div className="relative rounded-3xl border border-cyan-400 bg-slate-950 p-8 text-left text-white shadow-[0_20px_60px_rgba(0,0,0,0.18)] transition hover:-translate-y-1 hover:shadow-2xl">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">
                 Most Popular
@@ -474,7 +494,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Pro */}
             <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Pro
@@ -506,7 +525,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Social Proof */}
       <section className="bg-slate-950 px-6 py-24 text-white">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
@@ -524,7 +542,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Main proof number */}
           <div className="mt-14 text-center">
             <p className="text-6xl font-bold tracking-tight text-white md:text-7xl">
               1,200+
@@ -534,7 +551,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Proof cards */}
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
               <p className="text-3xl font-bold text-cyan-300">1,200+</p>
@@ -566,7 +582,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Supporting line */}
           <div className="mt-12 text-center">
             <p className="text-sm uppercase tracking-[0.2em] text-white/35">
               More visibility. Cleaner launch flow. Stronger first impression.
@@ -578,7 +593,6 @@ export default function Home() {
       <footer className="border-t border-gray-200 bg-white px-6 py-16">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 md:grid-cols-4">
-            {/* Brand */}
             <div>
               <div className="flex items-center gap-3">
                 <img src="/logo_bothead.png" alt="Logo" className="h-10 w-10" />
@@ -591,7 +605,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Product */}
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Product
@@ -621,7 +634,6 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* Company */}
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Company
@@ -646,7 +658,6 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* Legal */}
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Legal
@@ -667,7 +678,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Bottom bar */}
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 md:flex-row">
             <p className="text-sm text-gray-500">
               ©2026 PMPR. All rights reserved.

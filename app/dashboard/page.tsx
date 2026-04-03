@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import LogoutButton from "@/components/LogoutButton";
 import { useAuthSession } from "@/hooks/useAuthSession";
 
 export default function VolumeBotDashboardPage() {
@@ -11,6 +10,8 @@ export default function VolumeBotDashboardPage() {
   const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [headerLogoutHover, setHeaderLogoutHover] = useState(false);
+  const [menuLogoutHover, setMenuLogoutHover] = useState(false);
   const { session, loading: sessionLoading } = useAuthSession();
 
   useEffect(() => {
@@ -30,6 +31,17 @@ export default function VolumeBotDashboardPage() {
       router.replace("/");
     }
   }, [sessionLoading, session, router]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } finally {
+      router.replace("/");
+      router.refresh();
+    }
+  };
 
   const summary = useMemo(
     () => ({
@@ -123,14 +135,6 @@ export default function VolumeBotDashboardPage() {
   const dailyUsagePercent = Math.min((summary.dailyUsed / summary.dailyLimit) * 100, 100);
   const cycleUsagePercent = Math.min((summary.completedCycles / summary.maxCycles) * 100, 100);
 
-  if (sessionLoading || !session) {
-    return (
-      <main className="min-h-screen bg-white text-black flex items-center justify-center">
-        <p className="text-sm text-black/60">Checking session...</p>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-white text-black">
       {menuOpen && (
@@ -193,12 +197,20 @@ export default function VolumeBotDashboardPage() {
 
         <div className="mt-auto border-t border-black/10 p-4">
           {sessionLoading ? null : session ? (
-            <div className="space-y-3">
-              <div className="w-full rounded-xl border border-black px-4 py-3 text-center text-sm font-semibold text-black">
-                {`${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
-              </div>
-              <LogoutButton />
-            </div>
+            <button
+              onMouseEnter={() => setMenuLogoutHover(true)}
+              onMouseLeave={() => setMenuLogoutHover(false)}
+              onClick={handleLogout}
+              className={`w-full rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                menuLogoutHover
+                  ? "border-red-600 bg-red-600 text-white"
+                  : "border-black text-black hover:bg-black/5"
+              }`}
+            >
+              {menuLogoutHover
+                ? "Logout"
+                : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+            </button>
           ) : (
             <button
               onClick={() => {
@@ -214,7 +226,6 @@ export default function VolumeBotDashboardPage() {
       </div>
 
       <header className="sticky top-0 z-30 relative flex items-center h-24 px-4 border-b border-gray-200 bg-white/90 backdrop-blur-md">
-        {/* Left: Hamburger */}
         <button
           className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-md transition hover:bg-gray-100"
           aria-label="Open menu"
@@ -225,7 +236,6 @@ export default function VolumeBotDashboardPage() {
           <span className="block w-6 h-0.5 bg-black"></span>
         </button>
 
-        {/* Center: Logo */}
         <button
           type="button"
           onClick={() => router.push("/")}
@@ -243,8 +253,19 @@ export default function VolumeBotDashboardPage() {
 
         <div className="ml-auto">
           {sessionLoading ? null : session ? (
-            <button className="rounded-lg border border-black px-5 py-2 font-semibold text-black">
-              {`${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
+            <button
+              onMouseEnter={() => setHeaderLogoutHover(true)}
+              onMouseLeave={() => setHeaderLogoutHover(false)}
+              onClick={handleLogout}
+              className={`rounded-lg border px-5 py-2 font-semibold transition ${
+                headerLogoutHover
+                  ? "border-red-600 bg-red-600 text-white"
+                  : "border-black text-black hover:bg-gray-100"
+              }`}
+            >
+              {headerLogoutHover
+                ? "Logout"
+                : `${session.address.slice(0, 4)}...${session.address.slice(-4)}`}
             </button>
           ) : null}
         </div>
