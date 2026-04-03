@@ -2,21 +2,22 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createAuthMessage, verifySolanaSignature } from "@/lib/auth";
+import { verifySolanaSignature } from "@/lib/auth";
 
 type VerifyBody = {
   address: string;
   signature: string;
+  message: string;
 };
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as VerifyBody;
-    const { address, signature } = body;
+    const { address, signature, message } = body;
 
-    if (!address || !signature) {
+    if (!address || !signature || !message) {
       return NextResponse.json(
-        { error: "Missing address or signature." },
+        { error: "Missing address, signature, or message." },
         { status: 400 }
       );
     }
@@ -31,15 +32,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const domain =
-      process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost:3001";
+    if (!message.includes(`Nonce: ${nonce}`)) {
+      return NextResponse.json(
+        { error: "Auth message nonce mismatch." },
+        { status: 401 }
+      );
+    }
 
-    const message = createAuthMessage({
-      domain,
-      address,
-      nonce,
-      statement: "Sign this message to authenticate with PMPR.",
-    });
+    if (!message.includes(address)) {
+      return NextResponse.json(
+        { error: "Auth message address mismatch." },
+        { status: 401 }
+      );
+    }
 
     const isValid = verifySolanaSignature({
       message,

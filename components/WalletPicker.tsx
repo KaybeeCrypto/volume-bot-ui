@@ -9,15 +9,20 @@ type Props = {
   onSuccess?: () => void;
 };
 
+type VerifyResponse = {
+  ok?: boolean;
+  address?: string;
+  error?: string;
+};
+
+type NonceResponse = {
+  nonce?: string;
+  error?: string;
+};
+
 export default function WalletPicker({ onSuccess }: Props) {
-  const {
-    wallets,
-    select,
-    connect,
-    connected,
-    publicKey,
-    signMessage,
-  } = useWallet();
+  const wallet = useWallet();
+  const { wallets } = wallet;
 
   const [loadingWallet, setLoadingWallet] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -27,18 +32,14 @@ export default function WalletPicker({ onSuccess }: Props) {
       setError("");
       setLoadingWallet(String(walletName));
 
-      select(walletName);
+      wallet.select(walletName);
 
-      // small delay to allow adapter state to update
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      await wallet.connect();
+      await new Promise((resolve) => setTimeout(resolve, 350));
 
-      await connect();
-
-      // wait a moment for publicKey/signMessage to become available
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const activePublicKey = publicKey;
-      const activeSignMessage = signMessage;
+      const activePublicKey = wallet.publicKey;
+      const activeSignMessage = wallet.signMessage;
 
       if (!activePublicKey) {
         throw new Error("Wallet connected but public key is missing.");
@@ -53,22 +54,20 @@ export default function WalletPicker({ onSuccess }: Props) {
       });
 
       const nonceText = await nonceRes.text();
-      let nonceData: any;
+      let nonceData: NonceResponse;
 
       try {
-        nonceData = JSON.parse(nonceText);
+        nonceData = JSON.parse(nonceText) as NonceResponse;
       } catch {
         throw new Error("Nonce endpoint did not return JSON.");
       }
 
-      if (!nonceRes.ok) {
+      if (!nonceRes.ok || !nonceData.nonce) {
         throw new Error(nonceData.error || "Failed to create auth challenge.");
       }
 
-      const { nonce } = nonceData;
-
-      const domain =
-        process.env.NEXT_PUBLIC_APP_DOMAIN || window.location.host;
+      const nonce = nonceData.nonce;
+      const domain = window.location.host;
 
       const message =
         `${domain} wants you to sign in with your Solana account:\n` +
@@ -88,14 +87,15 @@ export default function WalletPicker({ onSuccess }: Props) {
         body: JSON.stringify({
           address: activePublicKey.toBase58(),
           signature,
+          message,
         }),
       });
 
       const verifyText = await verifyRes.text();
-      let verifyData: any;
+      let verifyData: VerifyResponse;
 
       try {
-        verifyData = JSON.parse(verifyText);
+        verifyData = JSON.parse(verifyText) as VerifyResponse;
       } catch {
         throw new Error("Verify endpoint did not return JSON.");
       }
