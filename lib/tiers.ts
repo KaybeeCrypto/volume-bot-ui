@@ -15,7 +15,7 @@ export const TIERS: Record<TierKey, TierConfig> = {
   trial: {
     key: "trial",
     name: "Trial",
-    priceSol: "0.8",
+    priceSol: "FREE",
     subtitle: "Best for testing the flow",
     features: [
       "Entry-level session",
