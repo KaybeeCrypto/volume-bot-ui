@@ -172,6 +172,13 @@ export default function VolumeBotDashboardPage() {
           >
             Overview
           </a>
+            <a
+              href="#overview"
+                className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
+                onClick={() => setMenuOpen(false)}
+              >
+            Sessions
+          </a>
           <a
             href="#controls"
             className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"

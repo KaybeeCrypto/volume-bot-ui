@@ -120,25 +120,11 @@ export default function Home() {
               Home
             </a>
             <a
-              href="/login"
-              className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Login
-            </a>
-            <a
               href="/dashboard"
               className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
               onClick={() => setMenuOpen(false)}
             >
               Dashboard
-            </a>
-            <a
-              href="/sessions"
-              className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Sessions
             </a>
             <a
               href="/buy"
