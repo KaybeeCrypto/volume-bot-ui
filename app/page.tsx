@@ -18,7 +18,7 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = useState(false);
   const loginAttemptRef = useRef(false);
 
-  const { disconnect } = useWallet();
+  const { disconnect, select } = useWallet();
   const {
     session,
     loading: sessionLoading,
@@ -31,6 +31,18 @@ export default function Home() {
         await disconnect();
       } catch {
         // ignore disconnect errors
+      }
+
+      try {
+        select(null);
+      } catch {
+        // ignore adapter reset errors
+      }
+
+      try {
+        localStorage.removeItem("walletName");
+      } catch {
+        // ignore storage errors
       }
     },
     onLoggedOut: async () => {

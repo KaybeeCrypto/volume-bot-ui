@@ -15,13 +15,25 @@ export default function VolumeBotDashboardPage() {
   const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
   const [menuOpen, setMenuOpen] = useState(false);
   const { session, loading: sessionLoading, refreshSession } = useAuthSession();
-  const { disconnect } = useWallet();
+  const { disconnect, select } = useWallet();
   const { handleLogout } = useLogout({
       disconnectWallet: async () => {
         try {
           await disconnect();
         } catch {
           // ignore disconnect errors
+        }
+
+        try {
+          select(null);
+        } catch {
+          // ignore adapter reset errors
+        }
+
+        try {
+          localStorage.removeItem("walletName");
+        } catch {
+          // ignore storage errors
         }
       },
       onLoggedOut: async () => {
