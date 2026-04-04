@@ -44,6 +44,7 @@ export default function Home() {
   ];
 
   const { authLoading, authError } = useWalletAuth({
+      enabled: loginOpen,
       session,
       refreshSession,
       onAuthenticated: () => {

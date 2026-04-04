@@ -11,12 +11,14 @@ type SessionData = {
 } | null;
 
 type UseWalletAuthArgs = {
+  enabled: boolean;
   session: SessionData;
   refreshSession: () => Promise<void>;
   onAuthenticated?: () => void;
 };
 
 export function useWalletAuth({
+  enabled,
   session,
   refreshSession,
   onAuthenticated,
@@ -30,6 +32,13 @@ export function useWalletAuth({
   const attemptedAddressRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      attemptedAddressRef.current = null;
+      setAuthLoading(false);
+      setAuthError("");
+      return;
+    }
+    
     if (!connected || !publicKey || !signMessage) {
       attemptedAddressRef.current = null;
       return;
