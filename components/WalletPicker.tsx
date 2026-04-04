@@ -27,10 +27,17 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (connected && onSuccess) {
-      onSuccess();
-    }
-  }, [connected, onSuccess]);
+      if (connected && pendingWallet && onSuccess) {
+        onSuccess();
+        setPendingWallet(null);
+      }
+    }, [connected, pendingWallet, onSuccess]);
+
+    useEffect(() => {
+      if (!connecting && !disconnecting && !connected) {
+        setPendingWallet(null);
+      }
+    }, [connecting, disconnecting, connected]);
 
   const supportedWallets = useMemo(() => {
     const names: SupportedWalletName[] = ["Phantom", "Solflare"];
