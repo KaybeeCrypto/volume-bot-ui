@@ -20,6 +20,20 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<TierConfig | null>(null);
+  const handleScrollToPricing = () => {
+    const pricingSection = document.getElementById("pricing");
+
+      if (pricingSection) {
+        const y = pricingSection.getBoundingClientRect().top + window.scrollY - 90;
+
+        window.scrollTo({
+          top: y,
+          behavior: "smooth",
+        });
+      }
+
+      setMenuOpen(false);
+    };
 
   const postLoginActionRef = useRef<"dashboard" | "purchase" | null>(null);
 
@@ -150,11 +164,8 @@ export default function Home() {
           openConnectForDashboard();
         }}
         showPrimaryButton
-        primaryButtonLabel="Start Free Trial"
-        onPrimaryButtonClick={() => {
-          setMenuOpen(false);
-          openPurchaseFlow("trial");
-        }}
+        primaryButtonLabel="Buy"
+        onPrimaryButtonClick={handleScrollToPricing}
       />
 
       <ConnectWalletModal
@@ -315,7 +326,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white px-6 py-24 text-black">
+      <section id="pricing" className="bg-white px-6 py-24 text-black">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">

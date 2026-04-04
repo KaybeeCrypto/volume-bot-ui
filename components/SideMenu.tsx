@@ -99,6 +99,7 @@ export default function SideMenu({
           <div className="flex flex-col gap-3">
             {showPrimaryButton && (
               <button
+                type="button"
                 onClick={onPrimaryButtonClick}
                 className="rounded-lg bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-cyan-300"
               >
