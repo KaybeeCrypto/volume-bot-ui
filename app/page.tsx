@@ -22,12 +22,6 @@ export default function Home() {
 
   useBodyScrollLock(menuOpen || loginOpen);
 
-  useEffect(() => {
-    if (connected) {
-      setLoginOpen(false);
-    }
-  }, [connected]);
-
   const handleHeaderLogoClick = () => {
     if (window.location.pathname === "/") {
       window.scrollTo({ top: 0, behavior: "smooth" });
