@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 type UseLogoutOptions = {
   onLoggedOut?: () => Promise<void> | void;
+  disconnectWallet?: () => Promise<void> | void;
 };
 
 export function useLogout(options?: UseLogoutOptions) {
@@ -15,6 +16,7 @@ export function useLogout(options?: UseLogoutOptions) {
         method: "POST",
       });
 
+      await options?.disconnectWallet?.();
       await options?.onLoggedOut?.();
     } finally {
       router.replace("/");

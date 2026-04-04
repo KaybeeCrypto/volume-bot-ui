@@ -8,18 +8,27 @@ import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useRequireSession } from "@/hooks/useRequireSession";
 import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export default function VolumeBotDashboardPage() {
   const router = useRouter();
   const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
   const [menuOpen, setMenuOpen] = useState(false);
   const { session, loading: sessionLoading, refreshSession } = useAuthSession();
+  const { disconnect } = useWallet();
   const { handleLogout } = useLogout({
-    onLoggedOut: async () => {
-      await refreshSession();
-      setMenuOpen(false);
-    },
-  });
+      disconnectWallet: async () => {
+        try {
+          await disconnect();
+        } catch {
+          // ignore disconnect errors
+        }
+      },
+      onLoggedOut: async () => {
+        await refreshSession();
+        setMenuOpen(false);
+      },
+    });
 
   useBodyScrollLock(menuOpen);
   useRequireSession(sessionLoading, session);

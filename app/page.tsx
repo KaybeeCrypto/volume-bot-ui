@@ -10,19 +10,28 @@ import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
 import ConnectWalletModal from "@/components/ConnectWalletModal";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const { disconnect } = useWallet();
   const { session, loading: sessionLoading, refreshSession } = useAuthSession();
   const { handleLogout } = useLogout({
-    onLoggedOut: async () => {
-      await refreshSession();
-      setLoginOpen(false);
-      setMenuOpen(false);
-    },
-  });
+      disconnectWallet: async () => {
+        try {
+          await disconnect();
+        } catch {
+          // ignore disconnect errors
+        }
+      },
+      onLoggedOut: async () => {
+        await refreshSession();
+        setLoginOpen(false);
+        setMenuOpen(false);
+      },
+    });
 
   useBodyScrollLock(menuOpen || loginOpen);
 
