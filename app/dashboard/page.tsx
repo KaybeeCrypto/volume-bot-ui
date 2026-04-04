@@ -159,7 +159,7 @@ export default function VolumeBotDashboardPage() {
               <p className="mb-3 inline-flex rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-black/55">
                 Live session overview
               </p>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Volume Bot Dashboard</h1>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">PMPR Dashboard</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-black/60 sm:text-base">
                 Monitor current token session, wallet participation, buy and sell cycle flow, and daily usage limits from one control panel.
               </p>
