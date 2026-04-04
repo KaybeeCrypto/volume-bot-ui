@@ -5,9 +5,29 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { generateNonce } from "@/lib/auth";
 
-export async function POST() {
+type NonceBody = {
+  address?: string;
+};
+
+export async function POST(request: Request) {
   try {
+    const body = (await request.json()) as NonceBody;
+    const address = body.address?.trim();
+
+    if (!address) {
+      return NextResponse.json(
+        { error: "Missing wallet address." },
+        { status: 400 }
+      );
+    }
+
     const nonce = generateNonce();
+
+    const message = [
+      "Sign this message to authenticate with PMPR.",
+      `Address: ${address}`,
+      `Nonce: ${nonce}`,
+    ].join("\n");
 
     const cookieStore = await cookies();
     cookieStore.set("pmpr_auth_nonce", nonce, {
@@ -18,7 +38,7 @@ export async function POST() {
       maxAge: 60 * 10,
     });
 
-    return NextResponse.json({ nonce });
+    return NextResponse.json({ nonce, message });
   } catch (error) {
     console.error("NONCE ROUTE ERROR:", error);
 
