@@ -26,19 +26,6 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
   );
   const [error, setError] = useState("");
 
-  useEffect(() => {
-      if (connected && pendingWallet && onSuccess) {
-        onSuccess();
-        setPendingWallet(null);
-      }
-    }, [connected, pendingWallet, onSuccess]);
-
-    useEffect(() => {
-      if (!connecting && !disconnecting && !connected) {
-        setPendingWallet(null);
-      }
-    }, [connecting, disconnecting, connected]);
-
   const supportedWallets = useMemo(() => {
     const names: SupportedWalletName[] = ["Phantom", "Solflare"];
 
@@ -48,6 +35,19 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
       )
       .filter(Boolean);
   }, [wallets]);
+
+  useEffect(() => {
+    if (connected && pendingWallet && onSuccess) {
+      onSuccess();
+      setPendingWallet(null);
+    }
+  }, [connected, pendingWallet, onSuccess]);
+
+  useEffect(() => {
+    if (!connecting && !disconnecting && !connected) {
+      setPendingWallet(null);
+    }
+  }, [connecting, disconnecting, connected]);
 
   const handleConnect = async (walletName: SupportedWalletName) => {
     setError("");
@@ -72,11 +72,16 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
         );
       }
 
-      if (wallet?.adapter.name !== walletName) {
-        select(targetWallet.adapter.name);
-      }
+      select(targetWallet.adapter.name);
 
-      await connect();
+      window.setTimeout(() => {
+        connect().catch((err) => {
+          const message =
+            err instanceof Error ? err.message : "Failed to connect wallet.";
+          setError(message);
+          setPendingWallet(null);
+        });
+      }, 100);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to connect wallet.";
@@ -85,18 +90,16 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
     }
   };
 
-  useEffect(() => {
-    if (!connecting && !disconnecting && !connected) {
-      setPendingWallet(null);
-    }
-  }, [connecting, disconnecting, connected]);
-
   return (
     <div className="flex w-full flex-col gap-3">
       {supportedWallets.map((walletEntry) => {
-        const walletName = walletEntry!.adapter.name as SupportedWalletName;
+        const walletName = String(
+          walletEntry!.adapter.name
+        ) as SupportedWalletName;
+
         const isPending =
-          pendingWallet === walletName || (connecting && wallet?.adapter.name === walletName);
+          pendingWallet === walletName ||
+          (connecting && wallet?.adapter.name === walletName);
 
         const installed =
           walletEntry!.readyState === WalletReadyState.Installed ||
@@ -135,7 +138,9 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
                     isPhantom ? "text-white" : "text-black"
                   }`}
                 >
-                  {isPending ? `Connecting ${walletName}...` : `Continue with ${walletName}`}
+                  {isPending
+                    ? `Connecting ${walletName}...`
+                    : `Continue with ${walletName}`}
                 </p>
 
                 <p
@@ -161,7 +166,7 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
 
       {supportedWallets.length === 0 && (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          No supported wallets were found. Make sure Phantom or Solflare is available in your wallet adapter setup.
+          No supported wallets were found.
         </div>
       )}
 
