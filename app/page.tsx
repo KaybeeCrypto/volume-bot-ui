@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuthSession } from "@/hooks/useAuthSession";
@@ -16,24 +16,49 @@ export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const loginAttemptRef = useRef(false);
+
   const { disconnect } = useWallet();
-  const { session, loading: sessionLoading, refreshSession } = useAuthSession();
+  const {
+    session,
+    loading: sessionLoading,
+    refreshSession,
+  } = useAuthSession();
+
   const { handleLogout } = useLogout({
-      disconnectWallet: async () => {
-        try {
-          await disconnect();
-        } catch {
-          // ignore disconnect errors
-        }
-      },
-      onLoggedOut: async () => {
-        await refreshSession();
-        setLoginOpen(false);
-        setMenuOpen(false);
-      },
-    });
+    disconnectWallet: async () => {
+      try {
+        await disconnect();
+      } catch {
+        // ignore disconnect errors
+      }
+    },
+    onLoggedOut: async () => {
+      await refreshSession();
+      setLoginOpen(false);
+      setMenuOpen(false);
+      loginAttemptRef.current = false;
+    },
+  });
 
   useBodyScrollLock(menuOpen || loginOpen);
+
+  const { authLoading, authError } = useWalletAuth({
+    enabled: loginOpen,
+    session,
+    refreshSession,
+    onAuthenticated: () => {
+      setLoginOpen(false);
+    },
+  });
+
+  useEffect(() => {
+    if (session && loginAttemptRef.current) {
+      loginAttemptRef.current = false;
+      setLoginOpen(false);
+      router.replace("/dashboard");
+    }
+  }, [session, router]);
 
   const handleHeaderLogoClick = () => {
     if (window.location.pathname === "/") {
@@ -52,23 +77,6 @@ export default function Home() {
     { label: "Settings", href: "/settings" },
   ];
 
-  const { authLoading, authError } = useWalletAuth({
-      enabled: loginOpen,
-      session,
-      refreshSession,
-      onAuthenticated: () => {
-        setLoginOpen(false);
-        router.replace("/dashboard");
-      },
-    });
-
-    useEffect(() => {
-      if (session) {
-        setLoginOpen(false);
-      }
-    }, [session]);
-
-
   return (
     <main className="min-h-screen bg-white text-black">
       <SideMenu
@@ -80,6 +88,7 @@ export default function Home() {
         onLogout={handleLogout}
         onConnect={() => {
           setMenuOpen(false);
+          loginAttemptRef.current = true;
           setLoginOpen(true);
         }}
         showPrimaryButton
@@ -91,11 +100,14 @@ export default function Home() {
       />
 
       <ConnectWalletModal
-          open={loginOpen}
-          onClose={() => setLoginOpen(false)}
-          authLoading={authLoading}
-          authError={authError}
-        />
+        open={loginOpen}
+        onClose={() => {
+          setLoginOpen(false);
+          loginAttemptRef.current = false;
+        }}
+        authLoading={authLoading}
+        authError={authError}
+      />
 
       <AppHeader
         onMenuOpen={() => setMenuOpen(true)}
@@ -103,17 +115,20 @@ export default function Home() {
         sessionLoading={sessionLoading}
         session={session}
         onLogout={handleLogout}
-        onConnect={() => setLoginOpen(true)}
+        onConnect={() => {
+          loginAttemptRef.current = true;
+          setLoginOpen(true);
+        }}
       />
 
       <section className="px-6 py-28">
-        <div className="mx-auto max-w-7xl flex flex-col-reverse items-center gap-10 md:flex-row md:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col-reverse items-center gap-10 md:flex-row md:justify-between">
           <div className="max-w-3xl text-center md:text-left">
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
               Solana Volume Automation
             </p>
 
-            <h1 className="text-5xl md:text-7xl font-bold leading-[1.02] tracking-tight">
+            <h1 className="text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
               Generate Volume. <br />
               Look Like Smart Money.
             </h1>
@@ -135,7 +150,10 @@ export default function Home() {
 
               {!session && (
                 <button
-                  onClick={() => setLoginOpen(true)}
+                  onClick={() => {
+                    loginAttemptRef.current = true;
+                    setLoginOpen(true);
+                  }}
                   className="rounded-lg border border-black px-6 py-3 font-semibold transition hover:bg-gray-100"
                 >
                   Connect Wallet
@@ -477,10 +495,26 @@ export default function Home() {
               </p>
 
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li><a href="/buy" className="hover:text-black">Buy Session</a></li>
-                <li><a href="/dashboard" className="hover:text-black">Dashboard</a></li>
-                <li><a href="/sessions" className="hover:text-black">Sessions</a></li>
-                <li><a href="/referrals" className="hover:text-black">Referrals</a></li>
+                <li>
+                  <a href="/buy" className="hover:text-black">
+                    Buy Session
+                  </a>
+                </li>
+                <li>
+                  <a href="/dashboard" className="hover:text-black">
+                    Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a href="/sessions" className="hover:text-black">
+                    Sessions
+                  </a>
+                </li>
+                <li>
+                  <a href="/referrals" className="hover:text-black">
+                    Referrals
+                  </a>
+                </li>
               </ul>
             </div>
 
@@ -490,9 +524,21 @@ export default function Home() {
               </p>
 
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li><a href="#" className="hover:text-black">About</a></li>
-                <li><a href="#" className="hover:text-black">Support</a></li>
-                <li><a href="#" className="hover:text-black">Contact</a></li>
+                <li>
+                  <a href="#" className="hover:text-black">
+                    About
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black">
+                    Support
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black">
+                    Contact
+                  </a>
+                </li>
               </ul>
             </div>
 
@@ -502,16 +548,22 @@ export default function Home() {
               </p>
 
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li><a href="#" className="hover:text-black">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-black">Privacy Policy</a></li>
+                <li>
+                  <a href="#" className="hover:text-black">
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-black">
+                    Privacy Policy
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
 
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 md:flex-row">
-            <p className="text-sm text-gray-500">
-              ©2026 PMPR. All rights reserved.
-            </p>
+            <p className="text-sm text-gray-500">©2026 PMPR. All rights reserved.</p>
 
             <div className="flex items-center gap-4">
               <a href="#" className="text-sm text-gray-500 hover:text-black">
