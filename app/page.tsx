@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import WalletPicker from "@/components/WalletPicker";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useLogout } from "@/hooks/useLogout";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -16,7 +14,6 @@ export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const { connected } = useWallet();
   const { session, loading: sessionLoading } = useAuthSession();
   const { handleLogout } = useLogout();
 

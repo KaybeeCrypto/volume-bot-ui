@@ -16,12 +16,12 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
     wallet,
     connected,
     connecting,
-    disconnecting,
     select,
     connect,
   } = useWallet();
 
-  const [pendingWallet, setPendingWallet] = useState<SupportedWalletName | null>(null);
+  const [pendingWallet, setPendingWallet] =
+    useState<SupportedWalletName | null>(null);
   const [error, setError] = useState("");
 
   const supportedWallets = useMemo(() => {
@@ -42,17 +42,10 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
   }, [connected, pendingWallet, onSuccess]);
 
   useEffect(() => {
-    if (!connecting && !disconnecting && !connected && !wallet) {
-      setPendingWallet(null);
-    }
-  }, [connecting, disconnecting, connected, wallet]);
-
-  useEffect(() => {
     const runConnect = async () => {
       if (!pendingWallet) return;
       if (!wallet) return;
       if (connected || connecting) return;
-
       if (String(wallet.adapter.name) !== pendingWallet) return;
 
       try {
@@ -86,7 +79,9 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
     }
 
     if (targetWallet.readyState === WalletReadyState.NotDetected) {
-      setError(`${walletName} is not installed or not detected in this browser.`);
+      setError(
+        `${walletName} is not installed or not detected in this browser.`
+      );
       return;
     }
 
@@ -97,7 +92,10 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
   return (
     <div className="flex w-full flex-col gap-3">
       {supportedWallets.map((walletEntry) => {
-        const walletName = String(walletEntry!.adapter.name) as SupportedWalletName;
+        const walletName = String(
+          walletEntry!.adapter.name
+        ) as SupportedWalletName;
+
         const isPending =
           pendingWallet === walletName ||
           (connecting && String(wallet?.adapter.name) === walletName);
