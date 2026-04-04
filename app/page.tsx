@@ -21,7 +21,9 @@ export default function Home() {
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<TierConfig | null>(null);
   const handleScrollToPricing = () => {
-    const pricingSection = document.getElementById("pricing");
+      setMenuOpen(false);
+
+      const pricingSection = document.getElementById("pricing");
 
       if (pricingSection) {
         const y = pricingSection.getBoundingClientRect().top + window.scrollY - 90;
@@ -31,8 +33,6 @@ export default function Home() {
           behavior: "smooth",
         });
       }
-
-      setMenuOpen(false);
     };
 
   const postLoginActionRef = useRef<"dashboard" | "purchase" | null>(null);
@@ -145,7 +145,6 @@ export default function Home() {
   const navItems = [
     { label: "Home", href: "/" },
     { label: "Dashboard", href: "/dashboard" },
-    { label: "Buy", href: "/buy" },
     { label: "Referrals", href: "/referrals" },
     { label: "Settings", href: "/settings" },
   ];
@@ -541,7 +540,7 @@ export default function Home() {
                 Product
               </p>
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li><a href="/buy" className="hover:text-black">Buy Session</a></li>
+                <li><a href="#pricing" className="hover:text-black">Buy Session</a></li>
                 <li><a href="/dashboard" className="hover:text-black">Dashboard</a></li>
                 <li><a href="/sessions" className="hover:text-black">Sessions</a></li>
                 <li><a href="/referrals" className="hover:text-black">Referrals</a></li>
