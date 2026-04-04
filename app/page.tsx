@@ -6,15 +6,20 @@ import { useRouter } from "next/navigation";
 import WalletPicker from "@/components/WalletPicker";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import { useLogout } from "@/hooks/useLogout";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import AppHeader from "@/components/AppHeader";
+import SideMenu from "@/components/SideMenu";
 
 export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [headerLogoutHover, setHeaderLogoutHover] = useState(false);
-  const [menuLogoutHover, setMenuLogoutHover] = useState(false);
   const { connected } = useWallet();
   const { session, loading: sessionLoading } = useAuthSession();
+  const { handleLogout } = useLogout();
+
+  useBodyScrollLock(menuOpen || loginOpen);
 
   useEffect(() => {
     if (connected) {
@@ -31,25 +36,34 @@ export default function Home() {
     router.push("/");
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-      });
-    } finally {
-      router.replace("/");
-      router.refresh();
-    }
-  };
+  const navItems = [
+    { label: "Home", href: "/" },
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Buy", href: "/buy" },
+    { label: "Referrals", href: "/referrals" },
+    { label: "Settings", href: "/settings" },
+  ];
 
   return (
     <main className="min-h-screen bg-white text-black">
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
+      <SideMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        navItems={navItems}
+        sessionLoading={sessionLoading}
+        session={session}
+        onLogout={handleLogout}
+        onConnect={() => {
+          setMenuOpen(false);
+          setLoginOpen(true);
+        }}
+        showPrimaryButton
+        primaryButtonLabel="Start Free Trial"
+        onPrimaryButtonClick={() => {
+          setMenuOpen(false);
+          router.push("/buy");
+        }}
+      />
 
       {loginOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
@@ -76,168 +90,14 @@ export default function Home() {
         </div>
       )}
 
-      <div
-        className={`fixed top-0 left-0 z-50 flex h-full w-80 flex-col bg-slate-950 text-white shadow-2xl transform transition-transform duration-300 ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="border-b border-white/10 px-5 py-5">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src="/logo_bothead.png"
-                alt="Bot logo"
-                className="h-10 w-10 object-contain"
-              />
-
-              <div>
-                <p className="text-lg font-bold tracking-tight">PMPR</p>
-                <p className="text-sm text-white/60">PMPR Panel</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setMenuOpen(false)}
-              className="rounded-md px-2 py-1 text-2xl leading-none text-white/70 transition hover:bg-white/10 hover:text-white"
-              aria-label="Close menu"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 py-5">
-          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-            Navigation
-          </p>
-
-          <nav className="flex flex-col gap-1">
-            <a
-              href="/"
-              className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Home
-            </a>
-            <a
-              href="/dashboard"
-              className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Dashboard
-            </a>
-            <a
-              href="/buy"
-              className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Buy
-            </a>
-            <a
-              href="/referrals"
-              className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Referrals
-            </a>
-            <a
-              href="/settings"
-              className="rounded-lg px-3 py-3 text-sm font-medium text-white transition hover:bg-cyan-400/10 hover:text-cyan-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Settings
-            </a>
-          </nav>
-        </div>
-
-        <div className="border-t border-white/10 px-4 py-4">
-          <div className="flex flex-col gap-3">
-            <button className="rounded-lg bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-cyan-300">
-              Start Free Trial
-            </button>
-
-            {sessionLoading ? null : session ? (
-              <button
-                onMouseEnter={() => setMenuLogoutHover(true)}
-                onMouseLeave={() => setMenuLogoutHover(false)}
-                onClick={handleLogout}
-                className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
-                  menuLogoutHover
-                    ? "border-red-500 bg-red-500 text-white"
-                    : "border-white/20 text-white hover:bg-white/10"
-                }`}
-              >
-                {menuLogoutHover
-                  ? "Logout"
-                  : `${session.address.slice(0, 4)}...`}
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  setLoginOpen(true);
-                }}
-                className="rounded-lg border border-white/20 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Connect Wallet
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <header className="sticky top-0 z-30 relative flex items-center h-24 px-4 border-b border-gray-200 bg-white/90 backdrop-blur-md">
-        <button
-          className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-md transition hover:bg-gray-100"
-          aria-label="Open menu"
-          onClick={() => setMenuOpen(true)}
-        >
-          <span className="block w-6 h-0.5 bg-black"></span>
-          <span className="block w-6 h-0.5 bg-black"></span>
-          <span className="block w-6 h-0.5 bg-black"></span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleHeaderLogoClick}
-          className="absolute left-1/2 -translate-x-1/2 transition hover:opacity-90"
-          aria-label="Go to main page"
-        >
-          <Image
-            src="/logo.png"
-            alt="VolumeBot logo"
-            width={300}
-            height={60}
-            priority
-          />
-        </button>
-
-        <div className="ml-auto">
-          {sessionLoading ? null : session ? (
-            <button
-              onMouseEnter={() => setHeaderLogoutHover(true)}
-              onMouseLeave={() => setHeaderLogoutHover(false)}
-              onClick={handleLogout}
-              className={`rounded-lg border px-5 py-2 font-semibold transition ${
-                headerLogoutHover
-                  ? "border-red-600 bg-red-600 text-white"
-                  : "border-black text-black hover:bg-gray-100"
-              }`}
-            >
-              {headerLogoutHover
-                ? "Logout"
-                : `${session.address.slice(0, 4)}...`}
-            </button>
-          ) : (
-            <button
-              onClick={() => setLoginOpen(true)}
-              className="rounded-lg border border-black px-5 py-2 font-semibold transition hover:bg-black hover:text-white"
-            >
-              Connect Wallet
-            </button>
-          )}
-        </div>
-      </header>
+      <AppHeader
+        onMenuOpen={() => setMenuOpen(true)}
+        onLogoClick={handleHeaderLogoClick}
+        sessionLoading={sessionLoading}
+        session={session}
+        onLogout={handleLogout}
+        onConnect={() => setLoginOpen(true)}
+      />
 
       <section className="px-6 py-28">
         <div className="mx-auto max-w-7xl flex flex-col-reverse items-center gap-10 md:flex-row md:justify-between">
@@ -258,6 +118,7 @@ export default function Home() {
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <button
+                onClick={() => router.push("/buy")}
                 className={`rounded-lg bg-black py-3 font-semibold text-white transition hover:opacity-90 ${
                   session ? "px-10 sm:min-w-[220px]" : "px-6"
                 }`}
@@ -415,7 +276,10 @@ export default function Home() {
                 <li>✔ Fast launch</li>
               </ul>
 
-              <button className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90">
+              <button
+                onClick={() => router.push("/buy")}
+                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
+              >
                 Select Trial
               </button>
             </div>
@@ -443,7 +307,10 @@ export default function Home() {
                 <li>✔ Straightforward setup</li>
               </ul>
 
-              <button className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90">
+              <button
+                onClick={() => router.push("/buy")}
+                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
+              >
                 Select Basic
               </button>
             </div>
@@ -475,7 +342,10 @@ export default function Home() {
                 <li>✔ Ideal default choice</li>
               </ul>
 
-              <button className="mt-8 w-full rounded-xl bg-white py-3 font-semibold text-black transition hover:bg-cyan-300">
+              <button
+                onClick={() => router.push("/buy")}
+                className="mt-8 w-full rounded-xl bg-white py-3 font-semibold text-black transition hover:bg-cyan-300"
+              >
                 Select Standard
               </button>
             </div>
@@ -503,7 +373,10 @@ export default function Home() {
                 <li>✔ Premium tier option</li>
               </ul>
 
-              <button className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90">
+              <button
+                onClick={() => router.push("/buy")}
+                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
+              >
                 Select Pro
               </button>
             </div>
@@ -597,26 +470,10 @@ export default function Home() {
               </p>
 
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li>
-                  <a href="/buy" className="hover:text-black">
-                    Buy Session
-                  </a>
-                </li>
-                <li>
-                  <a href="/dashboard" className="hover:text-black">
-                    Dashboard
-                  </a>
-                </li>
-                <li>
-                  <a href="/sessions" className="hover:text-black">
-                    Sessions
-                  </a>
-                </li>
-                <li>
-                  <a href="/referrals" className="hover:text-black">
-                    Referrals
-                  </a>
-                </li>
+                <li><a href="/buy" className="hover:text-black">Buy Session</a></li>
+                <li><a href="/dashboard" className="hover:text-black">Dashboard</a></li>
+                <li><a href="/sessions" className="hover:text-black">Sessions</a></li>
+                <li><a href="/referrals" className="hover:text-black">Referrals</a></li>
               </ul>
             </div>
 
@@ -626,21 +483,9 @@ export default function Home() {
               </p>
 
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li>
-                  <a href="#" className="hover:text-black">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Support
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Contact
-                  </a>
-                </li>
+                <li><a href="#" className="hover:text-black">About</a></li>
+                <li><a href="#" className="hover:text-black">Support</a></li>
+                <li><a href="#" className="hover:text-black">Contact</a></li>
               </ul>
             </div>
 
@@ -650,16 +495,8 @@ export default function Home() {
               </p>
 
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Privacy Policy
-                  </a>
-                </li>
+                <li><a href="#" className="hover:text-black">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-black">Privacy Policy</a></li>
               </ul>
             </div>
           </div>

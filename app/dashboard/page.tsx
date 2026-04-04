@@ -1,47 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import { useLogout } from "@/hooks/useLogout";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useRequireSession } from "@/hooks/useRequireSession";
+import AppHeader from "@/components/AppHeader";
+import SideMenu from "@/components/SideMenu";
 
 export default function VolumeBotDashboardPage() {
   const router = useRouter();
   const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [headerLogoutHover, setHeaderLogoutHover] = useState(false);
-  const [menuLogoutHover, setMenuLogoutHover] = useState(false);
   const { session, loading: sessionLoading } = useAuthSession();
+  const { handleLogout } = useLogout();
 
-  useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [menuOpen]);
-
-  useEffect(() => {
-    if (!sessionLoading && !session) {
-      router.replace("/");
-    }
-  }, [sessionLoading, session, router]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-      });
-    } finally {
-      router.replace("/");
-      router.refresh();
-    }
-  };
+  useBodyScrollLock(menuOpen);
+  useRequireSession(sessionLoading, session);
 
   const summary = useMemo(
     () => ({
@@ -72,6 +48,14 @@ export default function VolumeBotDashboardPage() {
       </main>
     );
   }
+
+  const navItems = [
+    { label: "Home", href: "/" },
+    { label: "Overview", href: "/dashboard#overview" },
+    { label: "Controls", href: "/dashboard#controls" },
+    { label: "Wallets", href: "/dashboard#wallets" },
+    { label: "Activity", href: "/dashboard#activity" },
+  ];
 
   const recentActivity = [
     {
@@ -137,146 +121,22 @@ export default function VolumeBotDashboardPage() {
 
   return (
     <main className="min-h-screen bg-white text-black">
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
+      <SideMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        navItems={navItems}
+        sessionLoading={sessionLoading}
+        session={session}
+        onLogout={handleLogout}
+      />
 
-      <div
-        className={`fixed top-0 left-0 z-50 flex h-full w-80 flex-col bg-white text-black shadow-2xl transform transition-transform duration-300 ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex items-center justify-between border-b border-black/10 px-5 py-5">
-          <div>
-            <p className="text-sm font-semibold tracking-[0.18em] text-black/55">VOLUME BOT</p>
-            <p className="text-xs text-black/45">Dashboard Menu</p>
-          </div>
-
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="rounded-md p-2 transition hover:bg-black/5"
-            aria-label="Close menu"
-          >
-            ✕
-          </button>
-        </div>
-
-        <nav className="flex flex-col px-4 py-4">
-          <a
-            href="#overview"
-            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
-            onClick={() => setMenuOpen(false)}
-          >
-            Overview
-          </a>
-            <a
-              href="#overview"
-                className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
-                onClick={() => setMenuOpen(false)}
-              >
-            Sessions
-          </a>
-          <a
-            href="#controls"
-            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
-            onClick={() => setMenuOpen(false)}
-          >
-            Controls
-          </a>
-          <a
-            href="#wallets"
-            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
-            onClick={() => setMenuOpen(false)}
-          >
-            Wallets
-          </a>
-          <a
-            href="#activity"
-            className="rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-black/5"
-            onClick={() => setMenuOpen(false)}
-          >
-            Activity
-          </a>
-        </nav>
-
-        <div className="mt-auto border-t border-black/10 p-4">
-          {sessionLoading ? null : session ? (
-            <button
-              onMouseEnter={() => setMenuLogoutHover(true)}
-              onMouseLeave={() => setMenuLogoutHover(false)}
-              onClick={handleLogout}
-              className={`w-full rounded-xl border px-4 py-3 text-sm font-semibold transition ${
-                menuLogoutHover
-                  ? "border-red-600 bg-red-600 text-white"
-                  : "border-black text-black hover:bg-black/5"
-              }`}
-            >
-              {menuLogoutHover
-                ? "Logout"
-                : `${session.address.slice(0, 4)}...`}
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                setLoginOpen(true);
-              }}
-              className="w-full rounded-xl border border-black px-4 py-3 text-sm font-medium transition hover:bg-black hover:text-white"
-            >
-              Connect Wallet
-            </button>
-          )}
-        </div>
-      </div>
-
-      <header className="sticky top-0 z-30 relative flex items-center h-24 px-4 border-b border-gray-200 bg-white/90 backdrop-blur-md">
-        <button
-          className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-md transition hover:bg-gray-100"
-          aria-label="Open menu"
-          onClick={() => setMenuOpen(true)}
-        >
-          <span className="block w-6 h-0.5 bg-black"></span>
-          <span className="block w-6 h-0.5 bg-black"></span>
-          <span className="block w-6 h-0.5 bg-black"></span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="absolute left-1/2 -translate-x-1/2 transition hover:opacity-90"
-          aria-label="Go to main page"
-        >
-          <Image
-            src="/logo.png"
-            alt="VolumeBot logo"
-            width={300}
-            height={60}
-            priority
-          />
-        </button>
-
-        <div className="ml-auto">
-          {sessionLoading ? null : session ? (
-            <button
-              onMouseEnter={() => setHeaderLogoutHover(true)}
-              onMouseLeave={() => setHeaderLogoutHover(false)}
-              onClick={handleLogout}
-              className={`rounded-lg border px-5 py-2 font-semibold transition ${
-                headerLogoutHover
-                  ? "border-red-600 bg-red-600 text-white"
-                  : "border-black text-black hover:bg-gray-100"
-              }`}
-            >
-              {headerLogoutHover
-                ? "Logout"
-                : `${session.address.slice(0, 4)}...`}
-            </button>
-          ) : null}
-        </div>
-      </header>
+      <AppHeader
+        onMenuOpen={() => setMenuOpen(true)}
+        onLogoClick={() => router.push("/")}
+        sessionLoading={sessionLoading}
+        session={session}
+        onLogout={handleLogout}
+      />
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8 lg:py-14">
         <div className="flex flex-col gap-8">
