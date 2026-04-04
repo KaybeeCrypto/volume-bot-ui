@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type SessionData = {
   address: string;
@@ -11,40 +11,35 @@ export function useAuthSession() {
   const [session, setSession] = useState<SessionData>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
+  const refreshSession = useCallback(async () => {
+    setLoading(true);
 
-    fetch("/api/auth/session")
-      .then(async (res) => {
-        const text = await res.text();
-
-        try {
-          return JSON.parse(text);
-        } catch {
-          throw new Error("Session endpoint did not return JSON.");
-        }
-      })
-      .then((data) => {
-        if (mounted) {
-          setSession(data.session ?? null);
-        }
-      })
-      .catch((error) => {
-        console.error("SESSION FETCH ERROR:", error);
-        if (mounted) {
-          setSession(null);
-        }
-      })
-      .finally(() => {
-        if (mounted) {
-          setLoading(false);
-        }
+    try {
+      const res = await fetch("/api/auth/session", {
+        cache: "no-store",
       });
 
-    return () => {
-      mounted = false;
-    };
+      const text = await res.text();
+
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error("Session endpoint did not return JSON.");
+      }
+
+      setSession(data.session ?? null);
+    } catch (error) {
+      console.error("SESSION FETCH ERROR:", error);
+      setSession(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { session, loading };
+  useEffect(() => {
+    void refreshSession();
+  }, [refreshSession]);
+
+  return { session, loading, refreshSession };
 }

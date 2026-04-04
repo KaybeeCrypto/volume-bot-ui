@@ -5,23 +5,25 @@ import WalletPicker from "@/components/WalletPicker";
 type ConnectWalletModalProps = {
   open: boolean;
   onClose: () => void;
+  authLoading?: boolean;
+  authError?: string;
 };
 
 export default function ConnectWalletModal({
   open,
   onClose,
+  authLoading = false,
+  authError = "",
 }: ConnectWalletModalProps) {
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
-      {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="relative z-10 w-full max-w-md rounded-[28px] border border-white/60 bg-white p-8 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -49,8 +51,20 @@ export default function ConnectWalletModal({
         </p>
 
         <div className="mt-7 rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
-          <WalletPicker onSuccess={onClose} />
+          <WalletPicker />
         </div>
+
+        {authLoading && (
+          <div className="mt-4 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-800">
+            Waiting for wallet signature...
+          </div>
+        )}
+
+        {authError && (
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {authError}
+          </div>
+        )}
 
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3">
           <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-cyan-500" />

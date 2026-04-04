@@ -1,27 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { useWallet } from "@solana/wallet-adapter-react";
 
-type WalletPickerProps = {
-  onSuccess?: () => void;
-};
-
 type SupportedWalletName = "Phantom" | "Solflare";
 
-export default function WalletPicker({ onSuccess }: WalletPickerProps) {
-  const {
-    wallets,
-    wallet,
-    connected,
-    connecting,
-    select,
-    connect,
-  } = useWallet();
-
-  const [pendingWallet, setPendingWallet] =
-    useState<SupportedWalletName | null>(null);
+export default function WalletPicker() {
+  const { wallets, wallet, connecting, select } = useWallet();
+  const [pendingWallet, setPendingWallet] = useState<SupportedWalletName | null>(null);
   const [error, setError] = useState("");
 
   const supportedWallets = useMemo(() => {
@@ -34,71 +21,47 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
       .filter(Boolean);
   }, [wallets]);
 
-  useEffect(() => {
-    if (connected && pendingWallet && onSuccess) {
-      onSuccess();
+  const handleConnect = async (walletName: SupportedWalletName) => {
+    setError("");
+    setPendingWallet(walletName);
+
+    try {
+      const targetWallet = wallets.find(
+        (walletEntry) => String(walletEntry.adapter.name) === walletName
+      );
+
+      if (!targetWallet) {
+        throw new Error(`${walletName} wallet is not available.`);
+      }
+
+      if (targetWallet.readyState === WalletReadyState.Unsupported) {
+        throw new Error(`${walletName} is not supported in this browser.`);
+      }
+
+      if (targetWallet.readyState === WalletReadyState.NotDetected) {
+        throw new Error(
+          `${walletName} is not installed or not detected in this browser.`
+        );
+      }
+
+      if (String(wallet?.adapter.name) !== walletName) {
+        select(targetWallet.adapter.name);
+      }
+
+      await targetWallet.adapter.connect();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to connect wallet.";
+      setError(message);
       setPendingWallet(null);
     }
-  }, [connected, pendingWallet, onSuccess]);
-
-  useEffect(() => {
-    const runConnect = async () => {
-      if (!pendingWallet) return;
-      if (!wallet) return;
-      if (connected || connecting) return;
-      if (String(wallet.adapter.name) !== pendingWallet) return;
-
-      try {
-        await connect();
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to connect wallet.";
-        setError(message);
-        setPendingWallet(null);
-      }
-    };
-
-    void runConnect();
-  }, [pendingWallet, wallet, connected, connecting, connect]);
-
-  const handleConnect = (walletName: SupportedWalletName) => {
-    setError("");
-
-    const targetWallet = wallets.find(
-      (walletEntry) => String(walletEntry.adapter.name) === walletName
-    );
-
-    if (!targetWallet) {
-      setError(`${walletName} wallet is not available.`);
-      return;
-    }
-
-    if (targetWallet.readyState === WalletReadyState.Unsupported) {
-      setError(`${walletName} is not supported in this browser.`);
-      return;
-    }
-
-    if (targetWallet.readyState === WalletReadyState.NotDetected) {
-      setError(
-        `${walletName} is not installed or not detected in this browser.`
-      );
-      return;
-    }
-
-    setPendingWallet(walletName);
-    select(targetWallet.adapter.name);
   };
 
   return (
     <div className="flex w-full flex-col gap-3">
       {supportedWallets.map((walletEntry) => {
-        const walletName = String(
-          walletEntry!.adapter.name
-        ) as SupportedWalletName;
-
-        const isPending =
-          pendingWallet === walletName ||
-          (connecting && String(wallet?.adapter.name) === walletName);
+        const walletName = String(walletEntry!.adapter.name) as SupportedWalletName;
+        const isPending = pendingWallet === walletName || connecting;
 
         const installed =
           walletEntry!.readyState === WalletReadyState.Installed ||
@@ -110,8 +73,8 @@ export default function WalletPicker({ onSuccess }: WalletPickerProps) {
           <button
             key={walletName}
             type="button"
-            onClick={() => handleConnect(walletName)}
-            disabled={isPending || connecting}
+            onClick={() => void handleConnect(walletName)}
+            disabled={isPending}
             className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
               isPhantom
                 ? "border-transparent bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_12px_30px_rgba(99,102,241,0.28)] hover:opacity-95"

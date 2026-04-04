@@ -9,13 +9,14 @@ import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
 import ConnectWalletModal from "@/components/ConnectWalletModal";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 
 export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const { session, loading: sessionLoading } = useAuthSession();
   const { handleLogout } = useLogout();
+  const { session, loading: sessionLoading, refreshSession } = useAuthSession();
 
   useBodyScrollLock(menuOpen || loginOpen);
 
@@ -35,6 +36,12 @@ export default function Home() {
     { label: "Referrals", href: "/referrals" },
     { label: "Settings", href: "/settings" },
   ];
+
+  const { authLoading, authError } = useWalletAuth({
+    session,
+    refreshSession,
+    onAuthenticated: () => setLoginOpen(false),
+  });
 
   return (
     <main className="min-h-screen bg-white text-black">
@@ -58,9 +65,11 @@ export default function Home() {
       />
 
       <ConnectWalletModal
-        open={loginOpen}
-        onClose={() => setLoginOpen(false)}
-      />
+          open={loginOpen}
+          onClose={() => setLoginOpen(false)}
+          authLoading={authLoading}
+          authError={authError}
+        />
 
       <AppHeader
         onMenuOpen={() => setMenuOpen(true)}
