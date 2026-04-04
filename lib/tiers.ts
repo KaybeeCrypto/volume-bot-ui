@@ -15,7 +15,7 @@ export const TIERS: Record<TierKey, TierConfig> = {
   trial: {
     key: "trial",
     name: "Trial",
-    priceSol: "0.80",
+    priceSol: "0.8",
     subtitle: "Best for testing the flow",
     features: [
       "Entry-level session",
@@ -27,7 +27,7 @@ export const TIERS: Record<TierKey, TierConfig> = {
   basic: {
     key: "basic",
     name: "Basic",
-    priceSol: "1.80",
+    priceSol: "1.8",
     subtitle: "Solid starting point for smaller launches",
     features: [
       "Reliable activity boost",
@@ -39,7 +39,7 @@ export const TIERS: Record<TierKey, TierConfig> = {
   standard: {
     key: "standard",
     name: "Standard",
-    priceSol: "3.20",
+    priceSol: "3.2",
     subtitle: "Best balance of cost and visible impact",
     features: [
       "Stronger activity profile",
@@ -52,7 +52,7 @@ export const TIERS: Record<TierKey, TierConfig> = {
   pro: {
     key: "pro",
     name: "Pro",
-    priceSol: "5.50",
+    priceSol: "5.5",
     subtitle: "For bigger pushes and stronger session coverage",
     features: [
       "Higher session intensity",
