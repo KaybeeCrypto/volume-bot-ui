@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 
-export function useLogout() {
+type UseLogoutOptions = {
+  onLoggedOut?: () => Promise<void> | void;
+};
+
+export function useLogout(options?: UseLogoutOptions) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -10,6 +14,8 @@ export function useLogout() {
       await fetch("/api/auth/logout", {
         method: "POST",
       });
+
+      await options?.onLoggedOut?.();
     } finally {
       router.replace("/");
       router.refresh();

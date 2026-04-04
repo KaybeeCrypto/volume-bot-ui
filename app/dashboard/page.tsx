@@ -13,8 +13,13 @@ export default function VolumeBotDashboardPage() {
   const router = useRouter();
   const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
   const [menuOpen, setMenuOpen] = useState(false);
-  const { session, loading: sessionLoading } = useAuthSession();
-  const { handleLogout } = useLogout();
+  const { session, loading: sessionLoading, refreshSession } = useAuthSession();
+  const { handleLogout } = useLogout({
+    onLoggedOut: async () => {
+      await refreshSession();
+      setMenuOpen(false);
+    },
+  });
 
   useBodyScrollLock(menuOpen);
   useRequireSession(sessionLoading, session);

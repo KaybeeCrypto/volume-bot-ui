@@ -15,8 +15,14 @@ export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const { handleLogout } = useLogout();
   const { session, loading: sessionLoading, refreshSession } = useAuthSession();
+  const { handleLogout } = useLogout({
+    onLoggedOut: async () => {
+      await refreshSession();
+      setLoginOpen(false);
+      setMenuOpen(false);
+    },
+  });
 
   useBodyScrollLock(menuOpen || loginOpen);
 
@@ -38,10 +44,20 @@ export default function Home() {
   ];
 
   const { authLoading, authError } = useWalletAuth({
-    session,
-    refreshSession,
-    onAuthenticated: () => setLoginOpen(false),
-  });
+      session,
+      refreshSession,
+      onAuthenticated: () => {
+        setLoginOpen(false);
+        router.replace("/dashboard");
+      },
+    });
+
+    useEffect(() => {
+      if (session) {
+        setLoginOpen(false);
+      }
+    }, [session]);
+
 
   return (
     <main className="min-h-screen bg-white text-black">

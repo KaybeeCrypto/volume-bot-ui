@@ -59,7 +59,7 @@ export default function AppHeader({
           onConnect={onConnect}
           classNameWhenLoggedIn="rounded-lg border px-5 py-2 font-semibold transition"
           idleLoggedInClassName="border-black text-black hover:bg-gray-100"
-          hoverLoggedInClassName="border-red-600 bg-red-600 text-white"
+          hoverLoggedInClassName="border-black bg-black text-white"
           classNameWhenLoggedOut="rounded-lg border border-black px-5 py-2 font-semibold transition hover:bg-black hover:text-white"
         />
       </div>
