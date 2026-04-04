@@ -22,10 +22,10 @@ export default function PurchaseTierModal({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setStep("summary");
-      setCopied(false);
-    }
+    if (!open) return;
+
+    setStep("summary");
+    setCopied(false);
   }, [open, tier]);
 
   if (!open || !tier) return null;
@@ -38,6 +38,10 @@ export default function PurchaseTierModal({
     } catch {
       setCopied(false);
     }
+  };
+
+  const handlePaymentComplete = () => {
+    onPaymentComplete(tier);
   };
 
   return (
@@ -76,7 +80,14 @@ export default function PurchaseTierModal({
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-400">
                     Selected Tier
                   </p>
-                  <h3 className="mt-2 text-3xl font-bold text-black">{tier.name}</h3>
+                  <div className="mt-2 flex items-center gap-3">
+                    <h3 className="text-3xl font-bold text-black">{tier.name}</h3>
+                    {tier.badge ? (
+                      <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-white">
+                        {tier.badge}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-2 text-sm text-gray-500">{tier.subtitle}</p>
                 </div>
 
@@ -90,7 +101,10 @@ export default function PurchaseTierModal({
 
               <ul className="mt-6 space-y-3 text-sm text-gray-700">
                 {tier.features.map((feature) => (
-                  <li key={feature}>✔ {feature}</li>
+                  <li key={feature} className="flex items-start gap-2">
+                    <span className="mt-[1px] text-black">✔</span>
+                    <span>{feature}</span>
+                  </li>
                 ))}
               </ul>
 
@@ -117,7 +131,7 @@ export default function PurchaseTierModal({
                 onClick={() => setStep("payment")}
                 className="rounded-xl bg-black px-5 py-3 font-semibold text-white transition hover:opacity-90"
               >
-                Continue to Payment
+                Purchase & Continue
               </button>
             </div>
           </>
@@ -179,7 +193,7 @@ export default function PurchaseTierModal({
 
               <button
                 type="button"
-                onClick={() => onPaymentComplete(tier)}
+                onClick={handlePaymentComplete}
                 className="rounded-xl bg-black px-5 py-3 font-semibold text-white transition hover:opacity-90"
               >
                 I Completed Payment

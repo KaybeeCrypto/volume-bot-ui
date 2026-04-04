@@ -1,11 +1,13 @@
-export type TierKey = "trial" | "basic" | "standard" | "pro";
+export const TIER_KEYS = ["trial", "basic", "standard", "pro"] as const;
+
+export type TierKey = (typeof TIER_KEYS)[number];
 
 export type TierConfig = {
   key: TierKey;
   name: string;
   priceSol: string;
   subtitle: string;
-  features: string[];
+  features: readonly string[];
   badge?: string;
 };
 
@@ -60,3 +62,9 @@ export const TIERS: Record<TierKey, TierConfig> = {
     ],
   },
 };
+
+export const TIER_LIST: TierConfig[] = TIER_KEYS.map((key) => TIERS[key]);
+
+export function getTierByKey(key: TierKey): TierConfig {
+  return TIERS[key];
+}
