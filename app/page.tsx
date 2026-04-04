@@ -20,20 +20,25 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<TierConfig | null>(null);
+
+  const formatPrice = (price: string) => {
+    return price === "FREE" ? "FREE" : `${price} SOL`;
+  };
+
   const handleScrollToPricing = () => {
-      setMenuOpen(false);
+    setMenuOpen(false);
 
-      const pricingSection = document.getElementById("pricing");
+    const pricingSection = document.getElementById("pricing");
 
-      if (pricingSection) {
-        const y = pricingSection.getBoundingClientRect().top + window.scrollY - 90;
+    if (pricingSection) {
+      const y = pricingSection.getBoundingClientRect().top + window.scrollY - 90;
 
-        window.scrollTo({
-          top: y,
-          behavior: "smooth",
-        });
-      }
-    };
+      window.scrollTo({
+        top: y,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const postLoginActionRef = useRef<"dashboard" | "purchase" | null>(null);
 
@@ -346,8 +351,8 @@ export default function Home() {
                 Trial
               </p>
               <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">
-                  {TIERS.trial.priceSol} SOL
+                <p className="text-4xl font-bold tracking-tight text-green-600">
+                  {formatPrice(TIERS.trial.priceSol)}
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
                   {TIERS.trial.subtitle}
@@ -365,7 +370,7 @@ export default function Home() {
                 onClick={() => openPurchaseFlow("trial")}
                 className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
               >
-                Select Trial
+                Start Free Trial
               </button>
             </div>
 
@@ -375,7 +380,7 @@ export default function Home() {
               </p>
               <div className="mt-5">
                 <p className="text-4xl font-bold tracking-tight">
-                  {TIERS.basic.priceSol} SOL
+                  {formatPrice(TIERS.basic.priceSol)}
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
                   {TIERS.basic.subtitle}
@@ -406,7 +411,7 @@ export default function Home() {
               </p>
               <div className="mt-5">
                 <p className="text-4xl font-bold tracking-tight">
-                  {TIERS.standard.priceSol} SOL
+                  {formatPrice(TIERS.standard.priceSol)}
                 </p>
                 <p className="mt-2 text-sm text-white/60">
                   {TIERS.standard.subtitle}
@@ -434,7 +439,7 @@ export default function Home() {
               </p>
               <div className="mt-5">
                 <p className="text-4xl font-bold tracking-tight">
-                  {TIERS.pro.priceSol} SOL
+                  {formatPrice(TIERS.pro.priceSol)}
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
                   {TIERS.pro.subtitle}
