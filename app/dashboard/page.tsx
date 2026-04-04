@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useLogout } from "@/hooks/useLogout";
@@ -66,6 +66,26 @@ export default function VolumeBotDashboardPage() {
     }),
     [sessionStatus]
   );
+
+  const [pendingPurchase, setPendingPurchase] = useState<null | {
+  tierKey: string;
+  tierName: string;
+  priceSol: string;
+  purchasedAt: number;
+  setupRequired: boolean;
+}>(null);
+
+useEffect(() => {
+  try {
+    const raw = localStorage.getItem("pmpr_pending_purchase");
+    if (!raw) return;
+
+    const parsed = JSON.parse(raw);
+    setPendingPurchase(parsed);
+  } catch {
+    setPendingPurchase(null);
+  }
+}, []);
 
   if (sessionLoading || !session) {
     return (
@@ -164,6 +184,35 @@ export default function VolumeBotDashboardPage() {
         onLogout={handleLogout}
       />
 
+      {pendingPurchase?.setupRequired && (
+        <section className="rounded-[28px] border border-cyan-200 bg-cyan-50 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+                Setup Required
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-black">
+                {pendingPurchase.tierName} purchased
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-black/65">
+                Payment has been marked as complete for the {pendingPurchase.tierName} tier.
+                Configure the bot first. The session will not start automatically.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem("pmpr_pending_purchase");
+                setPendingPurchase(null);
+              }}
+              className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+            >
+              Dismiss Notice
+            </button>
+          </div>
+        </section>
+      )}
       <section className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8 lg:py-14">
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

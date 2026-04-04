@@ -11,12 +11,17 @@ import SideMenu from "@/components/SideMenu";
 import ConnectWalletModal from "@/components/ConnectWalletModal";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
+import PurchaseTierModal from "@/components/PurchaseTierModal";
+import { TIERS, type TierConfig, type TierKey } from "@/lib/tiers";
 
 export default function Home() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const loginAttemptRef = useRef(false);
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<TierConfig | null>(null);
+
+  const postLoginActionRef = useRef<"dashboard" | "purchase" | null>(null);
 
   const { disconnect, select } = useWallet();
   const {
@@ -29,31 +34,26 @@ export default function Home() {
     disconnectWallet: async () => {
       try {
         await disconnect();
-      } catch {
-        // ignore disconnect errors
-      }
+      } catch {}
 
       try {
         select(null);
-      } catch {
-        // ignore adapter reset errors
-      }
+      } catch {}
 
       try {
         localStorage.removeItem("walletName");
-      } catch {
-        // ignore storage errors
-      }
+      } catch {}
     },
     onLoggedOut: async () => {
       await refreshSession();
       setLoginOpen(false);
+      setPurchaseOpen(false);
       setMenuOpen(false);
-      loginAttemptRef.current = false;
+      postLoginActionRef.current = null;
     },
   });
 
-  useBodyScrollLock(menuOpen || loginOpen);
+  useBodyScrollLock(menuOpen || loginOpen || purchaseOpen);
 
   const { authLoading, authError } = useWalletAuth({
     enabled: loginOpen,
@@ -65,12 +65,21 @@ export default function Home() {
   });
 
   useEffect(() => {
-    if (session && loginAttemptRef.current) {
-      loginAttemptRef.current = false;
+    if (!session || !postLoginActionRef.current) return;
+
+    if (postLoginActionRef.current === "dashboard") {
+      postLoginActionRef.current = null;
       setLoginOpen(false);
       router.replace("/dashboard");
+      return;
     }
-  }, [session, router]);
+
+    if (postLoginActionRef.current === "purchase" && selectedTier) {
+      postLoginActionRef.current = null;
+      setLoginOpen(false);
+      setPurchaseOpen(true);
+    }
+  }, [session, selectedTier, router]);
 
   const handleHeaderLogoClick = () => {
     if (window.location.pathname === "/") {
@@ -79,6 +88,44 @@ export default function Home() {
     }
 
     router.push("/");
+  };
+
+  const openConnectForDashboard = () => {
+    postLoginActionRef.current = "dashboard";
+    setLoginOpen(true);
+  };
+
+  const openPurchaseFlow = (tierKey: TierKey) => {
+    const tier = TIERS[tierKey];
+    setSelectedTier(tier);
+
+    if (!session) {
+      postLoginActionRef.current = "purchase";
+      setLoginOpen(true);
+      return;
+    }
+
+    setPurchaseOpen(true);
+  };
+
+  const handlePaymentComplete = (tier: TierConfig) => {
+    try {
+      localStorage.setItem(
+        "pmpr_pending_purchase",
+        JSON.stringify({
+          tierKey: tier.key,
+          tierName: tier.name,
+          priceSol: tier.priceSol,
+          purchasedAt: Date.now(),
+          setupRequired: true,
+        })
+      );
+    } catch {
+      // ignore storage errors
+    }
+
+    setPurchaseOpen(false);
+    router.push("/dashboard");
   };
 
   const navItems = [
@@ -100,14 +147,13 @@ export default function Home() {
         onLogout={handleLogout}
         onConnect={() => {
           setMenuOpen(false);
-          loginAttemptRef.current = true;
-          setLoginOpen(true);
+          openConnectForDashboard();
         }}
         showPrimaryButton
         primaryButtonLabel="Start Free Trial"
         onPrimaryButtonClick={() => {
           setMenuOpen(false);
-          router.push("/buy");
+          openPurchaseFlow("trial");
         }}
       />
 
@@ -115,10 +161,17 @@ export default function Home() {
         open={loginOpen}
         onClose={() => {
           setLoginOpen(false);
-          loginAttemptRef.current = false;
+          postLoginActionRef.current = null;
         }}
         authLoading={authLoading}
         authError={authError}
+      />
+
+      <PurchaseTierModal
+        open={purchaseOpen}
+        tier={selectedTier}
+        onClose={() => setPurchaseOpen(false)}
+        onPaymentComplete={handlePaymentComplete}
       />
 
       <AppHeader
@@ -127,10 +180,7 @@ export default function Home() {
         sessionLoading={sessionLoading}
         session={session}
         onLogout={handleLogout}
-        onConnect={() => {
-          loginAttemptRef.current = true;
-          setLoginOpen(true);
-        }}
+        onConnect={openConnectForDashboard}
       />
 
       <section className="px-6 py-28">
@@ -152,7 +202,7 @@ export default function Home() {
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <button
-                onClick={() => router.push("/buy")}
+                onClick={() => openPurchaseFlow("trial")}
                 className={`rounded-lg bg-black py-3 font-semibold text-white transition hover:opacity-90 ${
                   session ? "px-10 sm:min-w-[220px]" : "px-6"
                 }`}
@@ -162,10 +212,7 @@ export default function Home() {
 
               {!session && (
                 <button
-                  onClick={() => {
-                    loginAttemptRef.current = true;
-                    setLoginOpen(true);
-                  }}
+                  onClick={openConnectForDashboard}
                   className="rounded-lg border border-black px-6 py-3 font-semibold transition hover:bg-gray-100"
                 >
                   Connect Wallet
@@ -236,9 +283,7 @@ export default function Home() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15 text-lg font-bold text-cyan-300">
                 1
               </div>
-
               <h3 className="mt-6 text-2xl font-semibold">Pick a Tier</h3>
-
               <p className="mt-4 leading-7 text-white/65">
                 Choose the package that matches your target volume, strategy,
                 and budget.
@@ -249,9 +294,7 @@ export default function Home() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-fuchsia-500/15 text-lg font-bold text-fuchsia-300">
                 2
               </div>
-
               <h3 className="mt-6 text-2xl font-semibold">Pay SOL</h3>
-
               <p className="mt-4 leading-7 text-white/65">
                 Confirm your session with a clear payment flow and exact SOL
                 amount shown upfront.
@@ -262,12 +305,10 @@ export default function Home() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15 text-lg font-bold text-cyan-300">
                 3
               </div>
-
-              <h3 className="mt-6 text-2xl font-semibold">Bot Runs</h3>
-
+              <h3 className="mt-6 text-2xl font-semibold">Setup In Dashboard</h3>
               <p className="mt-4 leading-7 text-white/65">
-                Once confirmed, the bot starts running and begins generating
-                visible market activity.
+                After payment, continue to the dashboard and configure the bot
+                before starting your session.
               </p>
             </div>
           </div>
@@ -294,27 +335,24 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Trial
               </p>
-
               <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">X SOL</p>
+                <p className="text-4xl font-bold tracking-tight">
+                  {TIERS.trial.priceSol} SOL
+                </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Best for testing the flow
+                  {TIERS.trial.subtitle}
                 </p>
               </div>
-
               <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
                 Reactions included
               </div>
-
               <ul className="mt-8 space-y-3 text-sm text-gray-600">
-                <li>✔ Entry-level session</li>
-                <li>✔ Volume generation</li>
-                <li>✔ Clear setup flow</li>
-                <li>✔ Fast launch</li>
+                {TIERS.trial.features.map((feature) => (
+                  <li key={feature}>✔ {feature}</li>
+                ))}
               </ul>
-
               <button
-                onClick={() => router.push("/buy")}
+                onClick={() => openPurchaseFlow("trial")}
                 className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
               >
                 Select Trial
@@ -325,27 +363,24 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Basic
               </p>
-
               <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">X SOL</p>
+                <p className="text-4xl font-bold tracking-tight">
+                  {TIERS.basic.priceSol} SOL
+                </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Solid starting point for smaller launches
+                  {TIERS.basic.subtitle}
                 </p>
               </div>
-
               <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
                 Reactions included
               </div>
-
               <ul className="mt-8 space-y-3 text-sm text-gray-600">
-                <li>✔ Reliable activity boost</li>
-                <li>✔ Volume generation</li>
-                <li>✔ Good budget balance</li>
-                <li>✔ Straightforward setup</li>
+                {TIERS.basic.features.map((feature) => (
+                  <li key={feature}>✔ {feature}</li>
+                ))}
               </ul>
-
               <button
-                onClick={() => router.push("/buy")}
+                onClick={() => openPurchaseFlow("basic")}
                 className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
               >
                 Select Basic
@@ -356,31 +391,27 @@ export default function Home() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">
                 Most Popular
               </div>
-
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
                 Standard
               </p>
-
               <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">X SOL</p>
+                <p className="text-4xl font-bold tracking-tight">
+                  {TIERS.standard.priceSol} SOL
+                </p>
                 <p className="mt-2 text-sm text-white/60">
-                  Best balance of cost and visible impact
+                  {TIERS.standard.subtitle}
                 </p>
               </div>
-
               <div className="mt-6 inline-flex rounded-full bg-cyan-400/15 px-3 py-1 text-sm font-semibold text-cyan-300">
                 Reactions included
               </div>
-
               <ul className="mt-8 space-y-3 text-sm text-white/75">
-                <li>✔ Stronger activity profile</li>
-                <li>✔ Volume generation</li>
-                <li>✔ Better social proof effect</li>
-                <li>✔ Ideal default choice</li>
+                {TIERS.standard.features.map((feature) => (
+                  <li key={feature}>✔ {feature}</li>
+                ))}
               </ul>
-
               <button
-                onClick={() => router.push("/buy")}
+                onClick={() => openPurchaseFlow("standard")}
                 className="mt-8 w-full rounded-xl bg-white py-3 font-semibold text-black transition hover:bg-cyan-300"
               >
                 Select Standard
@@ -391,27 +422,24 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Pro
               </p>
-
               <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">X SOL</p>
+                <p className="text-4xl font-bold tracking-tight">
+                  {TIERS.pro.priceSol} SOL
+                </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  For bigger pushes and stronger session coverage
+                  {TIERS.pro.subtitle}
                 </p>
               </div>
-
               <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
                 Reactions included
               </div>
-
               <ul className="mt-8 space-y-3 text-sm text-gray-600">
-                <li>✔ Higher session intensity</li>
-                <li>✔ Volume generation</li>
-                <li>✔ Broader visible activity</li>
-                <li>✔ Premium tier option</li>
+                {TIERS.pro.features.map((feature) => (
+                  <li key={feature}>✔ {feature}</li>
+                ))}
               </ul>
-
               <button
-                onClick={() => router.push("/buy")}
+                onClick={() => openPurchaseFlow("pro")}
                 className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
               >
                 Select Pro
@@ -427,11 +455,9 @@ export default function Home() {
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
               Social Proof
             </p>
-
             <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
               Trusted by projects looking to create momentum
             </h2>
-
             <p className="mx-auto mt-5 max-w-2xl text-lg text-white/60">
               Built to make launching volume campaigns simple, fast, and easier
               to trust at a glance.
@@ -472,8 +498,7 @@ export default function Home() {
                 Simple launch process
               </p>
               <p className="mt-2 text-sm leading-6 text-white/60">
-                Pick a tier, pay SOL, and get the session running without
-                unnecessary friction.
+                Pick a tier, pay SOL, then configure the bot in dashboard before launch.
               </p>
             </div>
           </div>
@@ -494,7 +519,6 @@ export default function Home() {
                 <img src="/logo_bothead.png" alt="Logo" className="h-10 w-10" />
                 <p className="text-lg font-bold">PMPR</p>
               </div>
-
               <p className="mt-4 text-sm text-gray-500">
                 Automated Solana volume generation designed to simulate real
                 market activity and help projects gain traction.
@@ -505,28 +529,11 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Product
               </p>
-
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li>
-                  <a href="/buy" className="hover:text-black">
-                    Buy Session
-                  </a>
-                </li>
-                <li>
-                  <a href="/dashboard" className="hover:text-black">
-                    Dashboard
-                  </a>
-                </li>
-                <li>
-                  <a href="/sessions" className="hover:text-black">
-                    Sessions
-                  </a>
-                </li>
-                <li>
-                  <a href="/referrals" className="hover:text-black">
-                    Referrals
-                  </a>
-                </li>
+                <li><a href="/buy" className="hover:text-black">Buy Session</a></li>
+                <li><a href="/dashboard" className="hover:text-black">Dashboard</a></li>
+                <li><a href="/sessions" className="hover:text-black">Sessions</a></li>
+                <li><a href="/referrals" className="hover:text-black">Referrals</a></li>
               </ul>
             </div>
 
@@ -534,23 +541,10 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Company
               </p>
-
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li>
-                  <a href="#" className="hover:text-black">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Support
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Contact
-                  </a>
-                </li>
+                <li><a href="#" className="hover:text-black">About</a></li>
+                <li><a href="#" className="hover:text-black">Support</a></li>
+                <li><a href="#" className="hover:text-black">Contact</a></li>
               </ul>
             </div>
 
@@ -558,18 +552,9 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
                 Legal
               </p>
-
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-black">
-                    Privacy Policy
-                  </a>
-                </li>
+                <li><a href="#" className="hover:text-black">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-black">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
