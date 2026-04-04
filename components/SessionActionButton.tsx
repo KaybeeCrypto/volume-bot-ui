@@ -28,7 +28,7 @@ export default function SessionActionButton({
   classNameWhenLoggedOut = "",
   hoverLoggedInClassName = "",
   idleLoggedInClassName = "",
-  loggedOutLabel = "Connect Wallet",
+  loggedOutLabel = "Connect",
   fullWidth = false,
 }: SessionActionButtonProps) {
   const [hovered, setHovered] = useState(false);
