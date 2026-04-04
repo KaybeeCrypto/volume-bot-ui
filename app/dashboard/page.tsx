@@ -8,7 +8,9 @@ import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useRequireSession } from "@/hooks/useRequireSession";
 import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
+import TradingViewChart from "@/components/TradingViewChart";
 import { useWallet } from "@solana/wallet-adapter-react";
+
 
 export default function VolumeBotDashboardPage() {
   const router = useRouter();
@@ -49,6 +51,7 @@ export default function VolumeBotDashboardPage() {
     () => ({
       tokenName: "BOTHEAD",
       tokenAddress: "7xKp...93Lm",
+      chartSymbol: "BINANCE:SOLUSDT",
       completedCycles: 128,
       cycleStatus: sessionStatus,
       perBuyRate: "0.15 SOL",
@@ -263,6 +266,26 @@ useEffect(() => {
               subvalue={`${summary.totalWallets} wallets loaded`}
             />
           </div>
+
+          <SectionCard
+              title="Token Chart"
+              description="Live TradingView chart for the active session token pair."
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-black">Active chart</p>
+                  <p className="mt-1 text-sm text-black/55">
+                    Monitor token price action without leaving the dashboard.
+                  </p>
+                </div>
+
+                <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
+                  {summary.chartSymbol}
+                </span>
+              </div>
+
+              <TradingViewChart symbol={summary.chartSymbol} height={560} />
+            </SectionCard>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <SectionCard
