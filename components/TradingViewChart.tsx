@@ -26,29 +26,20 @@ export default function TradingViewChart({
 
     containerRef.current.innerHTML = "";
 
+    const containerId = `tradingview_${symbol.replace(/[^a-zA-Z0-9_]/g, "_")}_${Date.now()}`;
+
     const widgetContainer = document.createElement("div");
-    widgetContainer.className = "tradingview-widget-container__widget h-full w-full";
-
-    const copyright = document.createElement("div");
-    copyright.className = "tradingview-widget-copyright";
-
-    const link = document.createElement("a");
-    link.href = `https://www.tradingview.com/symbols/${encodeURIComponent(symbol)}/`;
-    link.rel = "noopener noreferrer";
-    link.target = "_blank";
-    link.innerHTML = `<span class="blue-text">${symbol} chart</span> by TradingView`;
-
-    copyright.appendChild(link);
+    widgetContainer.id = containerId;
+    widgetContainer.className = "h-full w-full";
 
     containerRef.current.appendChild(widgetContainer);
-    containerRef.current.appendChild(copyright);
 
     const createWidget = () => {
-      if (!window.TradingView || !widgetContainer) return;
+      if (!window.TradingView) return;
 
       new window.TradingView.widget({
         autosize: true,
-        symbol,
+        symbol: symbol,
         interval: "15",
         timezone: "Etc/UTC",
         theme: "light",
@@ -60,8 +51,8 @@ export default function TradingViewChart({
         hide_top_toolbar: false,
         hide_legend: false,
         save_image: false,
-        container: widgetContainer,
         support_host: "https://www.tradingview.com",
+        container_id: containerId,
       });
     };
 
@@ -71,7 +62,11 @@ export default function TradingViewChart({
 
     if (existingScript && window.TradingView) {
       createWidget();
-      return;
+      return () => {
+        if (containerRef.current) {
+          containerRef.current.innerHTML = "";
+        }
+      };
     }
 
     const script = document.createElement("script");
@@ -92,7 +87,7 @@ export default function TradingViewChart({
 
   return (
     <div
-      className="tradingview-widget-container w-full overflow-hidden rounded-2xl border border-black/10"
+      className="w-full overflow-hidden rounded-2xl border border-black/10 bg-white"
       style={{ height }}
     >
       <div ref={containerRef} className="h-full w-full" />
