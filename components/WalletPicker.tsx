@@ -79,7 +79,7 @@ export default function WalletPicker() {
               isPhantom
                 ? "border-transparent bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_12px_30px_rgba(99,102,241,0.28)] hover:opacity-95"
                 : "border-gray-200 bg-white text-black hover:bg-gray-50"
-            } ${isPending ? "cursor-not-allowed opacity-80" : ""}`}
+            } ${isPending ? "opacity-70 cursor-not-allowed" : ""}`}
           >
             <div className="flex items-center gap-3">
               <div

@@ -55,7 +55,7 @@ export default function ConnectWalletModal({
         </div>
 
         {authLoading && (
-          <div className="mt-4 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-800">
+          <div className="mt-4 text-sm text-gray-500">
             Waiting for wallet signature...
           </div>
         )}
