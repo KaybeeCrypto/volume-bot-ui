@@ -1,154 +1,168 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { useWallet } from "@solana/wallet-adapter-react";
-import type { WalletName } from "@solana/wallet-adapter-base";
-import bs58 from "bs58";
 
-type Props = {
+type WalletPickerProps = {
   onSuccess?: () => void;
 };
 
-type VerifyResponse = {
-  ok?: boolean;
-  address?: string;
-  error?: string;
-};
+type SupportedWalletName = "Phantom" | "Solflare";
 
-type NonceResponse = {
-  nonce?: string;
-  error?: string;
-};
+export default function WalletPicker({ onSuccess }: WalletPickerProps) {
+  const {
+    wallets,
+    wallet,
+    connected,
+    connecting,
+    disconnecting,
+    select,
+    connect,
+  } = useWallet();
 
-export default function WalletPicker({ onSuccess }: Props) {
-  const wallet = useWallet();
-  const { wallets } = wallet;
-
-  const [loadingWallet, setLoadingWallet] = useState<string | null>(null);
+  const [pendingWallet, setPendingWallet] = useState<SupportedWalletName | null>(
+    null
+  );
   const [error, setError] = useState("");
 
-  const handleWalletLogin = async (walletName: WalletName) => {
+  useEffect(() => {
+    if (connected && onSuccess) {
+      onSuccess();
+    }
+  }, [connected, onSuccess]);
+
+  const supportedWallets = useMemo(() => {
+    const names: SupportedWalletName[] = ["Phantom", "Solflare"];
+
+    return names
+      .map((name) =>
+        wallets.find((walletEntry) => walletEntry.adapter.name === name)
+      )
+      .filter(Boolean);
+  }, [wallets]);
+
+  const handleConnect = async (walletName: SupportedWalletName) => {
+    setError("");
+    setPendingWallet(walletName);
+
     try {
-      setError("");
-      setLoadingWallet(String(walletName));
+      const targetWallet = wallets.find(
+        (walletEntry) => walletEntry.adapter.name === walletName
+      );
 
-      wallet.select(walletName);
-
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      await wallet.connect();
-      await new Promise((resolve) => setTimeout(resolve, 350));
-
-      const activePublicKey = wallet.publicKey;
-      const activeSignMessage = wallet.signMessage;
-
-      if (!activePublicKey) {
-        throw new Error("Wallet connected but public key is missing.");
+      if (!targetWallet) {
+        throw new Error(`${walletName} wallet is not available.`);
       }
 
-      if (!activeSignMessage) {
-        throw new Error("This wallet does not support message signing.");
+      if (targetWallet.readyState === WalletReadyState.Unsupported) {
+        throw new Error(`${walletName} is not supported in this browser.`);
       }
 
-      const nonceRes = await fetch("/api/auth/nonce", {
-        method: "POST",
-      });
-
-      const nonceText = await nonceRes.text();
-      let nonceData: NonceResponse;
-
-      try {
-        nonceData = JSON.parse(nonceText) as NonceResponse;
-      } catch {
-        throw new Error("Nonce endpoint did not return JSON.");
+      if (targetWallet.readyState === WalletReadyState.NotDetected) {
+        throw new Error(
+          `${walletName} is not installed or not detected in this browser.`
+        );
       }
 
-      if (!nonceRes.ok || !nonceData.nonce) {
-        throw new Error(nonceData.error || "Failed to create auth challenge.");
+      if (wallet?.adapter.name !== walletName) {
+        select(targetWallet.adapter.name);
       }
 
-      const nonce = nonceData.nonce;
-      const domain = window.location.host;
-
-      const message =
-        `${domain} wants you to sign in with your Solana account:\n` +
-        `${activePublicKey.toBase58()}\n\n` +
-        `Sign this message to authenticate with PMPR.\n\n` +
-        `Nonce: ${nonce}`;
-
-      const encodedMessage = new TextEncoder().encode(message);
-      const signatureBytes = await activeSignMessage(encodedMessage);
-      const signature = bs58.encode(signatureBytes);
-
-      const verifyRes = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          address: activePublicKey.toBase58(),
-          signature,
-          message,
-        }),
-      });
-
-      const verifyText = await verifyRes.text();
-      let verifyData: VerifyResponse;
-
-      try {
-        verifyData = JSON.parse(verifyText) as VerifyResponse;
-      } catch {
-        throw new Error("Verify endpoint did not return JSON.");
-      }
-
-      if (!verifyRes.ok) {
-        throw new Error(verifyData.error || "Authentication failed.");
-      }
-
-      onSuccess?.();
-      window.location.href = "/dashboard";
+      await connect();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Something went wrong.";
+        err instanceof Error ? err.message : "Failed to connect wallet.";
       setError(message);
-    } finally {
-      setLoadingWallet(null);
+      setPendingWallet(null);
     }
   };
 
-  const phantom = wallets.find((w) => w.adapter.name === "Phantom");
-  const solflare = wallets.find((w) => w.adapter.name === "Solflare");
+  useEffect(() => {
+    if (!connecting && !disconnecting && !connected) {
+      setPendingWallet(null);
+    }
+  }, [connecting, disconnecting, connected]);
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {phantom && (
-        <button
-          onClick={() => handleWalletLogin(phantom.adapter.name)}
-          disabled={!!loadingWallet}
-          className="w-full max-w-[260px] rounded-xl bg-[#6C47FF] px-5 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-        >
-          {loadingWallet === phantom.adapter.name
-            ? "Connecting Phantom..."
-            : "Continue with Phantom"}
-        </button>
+    <div className="flex w-full flex-col gap-3">
+      {supportedWallets.map((walletEntry) => {
+        const walletName = walletEntry!.adapter.name as SupportedWalletName;
+        const isPending =
+          pendingWallet === walletName || (connecting && wallet?.adapter.name === walletName);
+
+        const installed =
+          walletEntry!.readyState === WalletReadyState.Installed ||
+          walletEntry!.readyState === WalletReadyState.Loadable;
+
+        const isPhantom = walletName === "Phantom";
+
+        return (
+          <button
+            key={walletName}
+            type="button"
+            onClick={() => void handleConnect(walletName)}
+            disabled={isPending || connecting}
+            className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
+              isPhantom
+                ? "border-transparent bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_12px_30px_rgba(99,102,241,0.28)] hover:opacity-95"
+                : "border-gray-200 bg-white text-black hover:bg-gray-50"
+            } ${isPending ? "cursor-not-allowed opacity-80" : ""}`}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl ${
+                  isPhantom ? "bg-white/12" : "bg-gray-100"
+                }`}
+              >
+                <img
+                  src={walletEntry!.adapter.icon}
+                  alt={`${walletName} logo`}
+                  className="h-6 w-6 object-contain"
+                />
+              </div>
+
+              <div>
+                <p
+                  className={`text-sm font-semibold ${
+                    isPhantom ? "text-white" : "text-black"
+                  }`}
+                >
+                  {isPending ? `Connecting ${walletName}...` : `Continue with ${walletName}`}
+                </p>
+
+                <p
+                  className={`mt-1 text-xs ${
+                    isPhantom ? "text-white/70" : "text-gray-500"
+                  }`}
+                >
+                  {installed ? "Detected in browser" : "Not detected"}
+                </p>
+              </div>
+            </div>
+
+            <span
+              className={`text-lg transition group-hover:translate-x-1 ${
+                isPhantom ? "text-white/70" : "text-gray-400"
+              }`}
+            >
+              {isPending ? "…" : "→"}
+            </span>
+          </button>
+        );
+      })}
+
+      {supportedWallets.length === 0 && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          No supported wallets were found. Make sure Phantom or Solflare is available in your wallet adapter setup.
+        </div>
       )}
 
-      {solflare && (
-        <button
-          onClick={() => handleWalletLogin(solflare.adapter.name)}
-          disabled={!!loadingWallet}
-          className="w-full max-w-[260px] rounded-xl border border-black px-5 py-3 font-semibold text-black transition hover:bg-gray-100 disabled:opacity-60"
-        >
-          {loadingWallet === solflare.adapter.name
-            ? "Connecting Solflare..."
-            : "Continue with Solflare"}
-        </button>
-      )}
-
-      {error ? (
-        <p className="max-w-[320px] text-center text-sm text-red-500">
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
-        </p>
-      ) : null}
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { useLogout } from "@/hooks/useLogout";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
+import ConnectWalletModal from "@/components/ConnectWalletModal";
 
 export default function Home() {
   const router = useRouter();
@@ -65,30 +66,10 @@ export default function Home() {
         }}
       />
 
-      {loginOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setLoginOpen(false)}
-          />
-
-          <div className="relative z-10 w-full max-w-[450px] rounded-3xl bg-white px-8 py-9 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Connect Wallet</h2>
-              <button
-                onClick={() => setLoginOpen(false)}
-                className="text-xl text-gray-500 hover:text-black"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mt-8 flex min-h-[170px] flex-col items-center justify-center">
-              <WalletPicker onSuccess={() => setLoginOpen(false)} />
-            </div>
-          </div>
-        </div>
-      )}
+      <ConnectWalletModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+      />
 
       <AppHeader
         onMenuOpen={() => setMenuOpen(true)}
