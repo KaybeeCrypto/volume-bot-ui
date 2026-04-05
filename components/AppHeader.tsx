@@ -51,16 +51,13 @@ export default function AppHeader({
         />
       </button>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="relative ml-auto flex items-center gap-2">
         <SessionActionButton
           sessionLoading={sessionLoading}
           session={session}
           onLogout={onLogout}
           onConnect={onConnect}
-          classNameWhenLoggedIn="rounded-lg border px-5 py-2 font-semibold transition"
-          idleLoggedInClassName="border-black text-black hover:bg-gray-100 dark:border-white dark:text-white dark:hover:bg-white/10"
-          hoverLoggedInClassName="border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-          classNameWhenLoggedOut="rounded-lg border border-black px-5 py-2 font-semibold transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+          loggedOutLabel="Connect Wallet"
         />
       </div>
     </header>
