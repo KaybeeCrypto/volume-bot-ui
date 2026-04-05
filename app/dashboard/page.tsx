@@ -11,103 +11,111 @@ import SideMenu from "@/components/SideMenu";
 import GeckoTerminalChart from "@/components/GeckoTerminalChart";
 import { useWallet } from "@solana/wallet-adapter-react";
 
+type DashboardSummary = {
+  tokenName: string;
+  tokenAddress: string;
+  tokenAddressDisplay: string;
+  geckoMode: "tokens" | "pools";
+  completedCycles: number;
+  cycleStatus: "Running" | "Paused" | "Stopped";
+  perBuyRate: string;
+  dailyUsed: number;
+  dailyLimit: number;
+  activeWallets: number;
+  totalWallets: number;
+  buyCycles: number;
+  sellCycles: number;
+  maxCycles: number;
+  idleWallets: number;
+  failedWallets: number;
+  remainingToday: number;
+  estimatedCyclesLeft: number;
+};
 
-    type DashboardSummary = {
-      tokenName: string;
-      tokenAddress: string;
-      tokenAddressDisplay: string;
-      geckoMode: "tokens" | "pools";
-      completedCycles: number;
-      cycleStatus: "Running" | "Paused" | "Stopped";
-      perBuyRate: string;
-      dailyUsed: number;
-      dailyLimit: number;
-      activeWallets: number;
-      totalWallets: number;
-      buyCycles: number;
-      sellCycles: number;
-      maxCycles: number;
-      idleWallets: number;
-      failedWallets: number;
-      remainingToday: number;
-      estimatedCyclesLeft: number;
-    };
+export default function VolumeBotDashboardPage() {
+  const router = useRouter();
+  const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [tokenAddressInput, setTokenAddressInput] = useState("");
+  const [configuredTokenAddress, setConfiguredTokenAddress] = useState("");
+  const [configuredTokenTicker, setConfiguredTokenTicker] = useState("");
+  const [tokenLookupLoading, setTokenLookupLoading] = useState(false);
+  const [tokenLookupError, setTokenLookupError] = useState("");
+  const { session, loading: sessionLoading, refreshSession } = useAuthSession();
+  const { disconnect, select } = useWallet();
 
-    export default function VolumeBotDashboardPage() {
-      const router = useRouter();
+  const { handleLogout } = useLogout({
+    disconnectWallet: async () => {
+      try {
+        await disconnect();
+      } catch {
+        // ignore disconnect errors
+      }
 
-      const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
-      const [menuOpen, setMenuOpen] = useState(false);
+      try {
+        select(null);
+      } catch {
+        // ignore adapter reset errors
+      }
 
-      /* ✅ Token config state */
-      const [tokenAddressInput, setTokenAddressInput] = useState("");
-      const [configuredTokenAddress, setConfiguredTokenAddress] = useState("");
+      try {
+        localStorage.removeItem("walletName");
+      } catch {
+        // ignore storage errors
+      }
+    },
+    onLoggedOut: async () => {
+      await refreshSession();
+      setMenuOpen(false);
+    },
+  });
 
-      const { session, loading: sessionLoading, refreshSession } = useAuthSession();
-      const { disconnect, select } = useWallet();
+  useEffect(() => {
+    try {
+      const savedAddress = localStorage.getItem("pmpr_chart_token_address");
+      const savedTicker = localStorage.getItem("pmpr_chart_token_ticker");
 
-      const { handleLogout } = useLogout({
-        disconnectWallet: async () => {
-          try {
-            await disconnect();
-          } catch {}
+      if (savedAddress) {
+        setConfiguredTokenAddress(savedAddress);
+        setTokenAddressInput(savedAddress);
+      }
 
-          try {
-            select(null);
-          } catch {}
+      if (savedTicker) {
+        setConfiguredTokenTicker(savedTicker);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
 
-          try {
-            localStorage.removeItem("walletName");
-          } catch {}
-        },
-        onLoggedOut: async () => {
-          await refreshSession();
-          setMenuOpen(false);
-        },
-      });
+  useBodyScrollLock(menuOpen);
+  useRequireSession(sessionLoading, session);
 
-      /* ✅ Load saved token */
-      useEffect(() => {
-        try {
-          const saved = localStorage.getItem("pmpr_chart_token_address");
-          if (!saved) return;
-
-          setConfiguredTokenAddress(saved);
-          setTokenAddressInput(saved);
-        } catch {}
-      }, []);
-
-      useBodyScrollLock(menuOpen);
-      useRequireSession(sessionLoading, session);
-
-      /* ✅ Typed summary (fixes geckoMode error) */
-      const summary = useMemo<DashboardSummary>(
-        () => ({
-          tokenName: "BOTHEAD",
-          tokenAddress: configuredTokenAddress,
-          tokenAddressDisplay: configuredTokenAddress
-            ? `${configuredTokenAddress.slice(0, 4)}...${configuredTokenAddress.slice(-4)}`
-            : "Not configured",
-
-          geckoMode: "tokens",
-
-          completedCycles: 128,
-          cycleStatus: sessionStatus,
-          perBuyRate: "0.15 SOL",
-          dailyUsed: 12,
-          dailyLimit: 20,
-          activeWallets: 18,
-          totalWallets: 24,
-          buyCycles: 64,
-          sellCycles: 64,
-          maxCycles: 200,
-          idleWallets: 4,
-          failedWallets: 2,
-          remainingToday: 8,
-          estimatedCyclesLeft: 53,
-        }),
-        [sessionStatus, configuredTokenAddress]
-      );
+  const summary = useMemo<DashboardSummary>(
+    () => ({
+      tokenName: configuredTokenTicker || "Not configured",
+      tokenAddress: configuredTokenAddress,
+      tokenAddressDisplay: configuredTokenAddress
+        ? `${configuredTokenAddress.slice(0, 4)}...${configuredTokenAddress.slice(-4)}`
+        : "Not configured",
+      geckoMode: "tokens",
+      completedCycles: 128,
+      cycleStatus: sessionStatus,
+      perBuyRate: "0.15 SOL",
+      dailyUsed: 12,
+      dailyLimit: 20,
+      activeWallets: 18,
+      totalWallets: 24,
+      buyCycles: 64,
+      sellCycles: 64,
+      maxCycles: 200,
+      idleWallets: 4,
+      failedWallets: 2,
+      remainingToday: 8,
+      estimatedCyclesLeft: 53,
+    }),
+    [sessionStatus, configuredTokenAddress, configuredTokenTicker]
+  );
 
   const [pendingPurchase, setPendingPurchase] = useState<null | {
     tierKey: string;
@@ -128,6 +136,77 @@ import { useWallet } from "@solana/wallet-adapter-react";
       setPendingPurchase(null);
     }
   }, []);
+
+  async function fetchTokenTicker(address: string) {
+    const trimmed = address.trim();
+    if (!trimmed) {
+      throw new Error("Token address is required.");
+    }
+
+    const response = await fetch(
+      `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${trimmed}/info`,
+      {
+        headers: {
+          Accept: "application/json;version=20230302",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Token lookup failed.");
+    }
+
+    const json = await response.json();
+
+    const symbol = json?.data?.attributes?.symbol || json?.data?.attributes?.name || "";
+
+    if (!symbol) {
+      throw new Error("Token ticker not found.");
+    }
+
+    return symbol;
+  }
+
+  async function handleSaveToken() {
+    const nextAddress = tokenAddressInput.trim();
+    if (!nextAddress) {
+      setTokenLookupError("Token address is required.");
+      return;
+    }
+
+    setTokenLookupLoading(true);
+    setTokenLookupError("");
+
+    try {
+      const ticker = await fetchTokenTicker(nextAddress);
+
+      setConfiguredTokenAddress(nextAddress);
+      setConfiguredTokenTicker(ticker);
+
+      localStorage.setItem("pmpr_chart_token_address", nextAddress);
+      localStorage.setItem("pmpr_chart_token_ticker", ticker);
+    } catch (error) {
+      setTokenLookupError(
+        error instanceof Error ? error.message : "Could not fetch token ticker."
+      );
+    } finally {
+      setTokenLookupLoading(false);
+    }
+  }
+
+  function handleClearToken() {
+    setConfiguredTokenAddress("");
+    setConfiguredTokenTicker("");
+    setTokenAddressInput("");
+    setTokenLookupError("");
+
+    try {
+      localStorage.removeItem("pmpr_chart_token_address");
+      localStorage.removeItem("pmpr_chart_token_ticker");
+    } catch {
+      // ignore storage errors
+    }
+  }
 
   if (sessionLoading || !session) {
     return (
@@ -151,7 +230,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
       wallet: "4rYd...8Pw2",
       action: "Buy executed",
       amount: "0.15 SOL",
-      token: "BOTHEAD",
+      token: summary.tokenName !== "Not configured" ? summary.tokenName : "--",
       status: "Success",
     },
     {
@@ -159,7 +238,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
       wallet: "8LaP...2Mn9",
       action: "Sell executed",
       amount: "0.14 SOL",
-      token: "BOTHEAD",
+      token: summary.tokenName !== "Not configured" ? summary.tokenName : "--",
       status: "Success",
     },
     {
@@ -167,7 +246,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
       wallet: "3KfQ...7Hs1",
       action: "Cycle completed",
       amount: "--",
-      token: "BOTHEAD",
+      token: summary.tokenName !== "Not configured" ? summary.tokenName : "--",
       status: "Success",
     },
     {
@@ -175,7 +254,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
       wallet: "9RtM...5Qa4",
       action: "Wallet skipped",
       amount: "--",
-      token: "BOTHEAD",
+      token: summary.tokenName !== "Not configured" ? summary.tokenName : "--",
       status: "Limited",
     },
     {
@@ -183,7 +262,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
       wallet: "2VnB...1Je8",
       action: "Buy executed",
       amount: "0.15 SOL",
-      token: "BOTHEAD",
+      token: summary.tokenName !== "Not configured" ? summary.tokenName : "--",
       status: "Success",
     },
     {
@@ -191,7 +270,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
       wallet: "6ZkD...4Pw7",
       action: "Sell executed",
       amount: "0.15 SOL",
-      token: "BOTHEAD",
+      token: summary.tokenName !== "Not configured" ? summary.tokenName : "--",
       status: "Success",
     },
   ];
@@ -360,38 +439,29 @@ import { useWallet } from "@solana/wallet-adapter-react";
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      const nextAddress = tokenAddressInput.trim();
-                      setConfiguredTokenAddress(nextAddress);
-
-                      try {
-                        localStorage.setItem("pmpr_chart_token_address", nextAddress);
-                      } catch {
-                        // ignore storage errors
-                      }
-                    }}
-                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+                    onClick={handleSaveToken}
+                    disabled={tokenLookupLoading}
+                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Save Token
+                    {tokenLookupLoading ? "Saving..." : "Save Token"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setConfiguredTokenAddress("");
-                      setTokenAddressInput("");
-
-                      try {
-                        localStorage.removeItem("pmpr_chart_token_address");
-                      } catch {
-                        // ignore storage errors
-                      }
-                    }}
+                    onClick={handleClearToken}
                     className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
                   >
                     Clear
                   </button>
                 </div>
               </div>
+
+              {tokenLookupLoading && (
+                <p className="mb-4 text-sm text-black/55">Fetching token info...</p>
+              )}
+
+              {tokenLookupError && (
+                <p className="mb-4 text-sm text-red-600">{tokenLookupError}</p>
+              )}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <InfoRow label="Token Used in Session" value={summary.tokenName} />
