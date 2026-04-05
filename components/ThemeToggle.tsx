@@ -17,17 +17,17 @@ export default function ThemeToggle() {
       className="inline-flex items-center gap-3 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span
-        className={`relative flex h-10 w-20 items-center rounded-full border-2 transition-all ${
+        className={`relative flex h-7 w-14 items-center rounded-full border-2 transition-all ${
           isDark
             ? "border-white bg-white/10"
             : "border-black bg-white"
         }`}
       >
         <span
-          className={`absolute flex h-7 w-7 items-center justify-center rounded-full transition-all duration-300 ${
+          className={`absolute flex h-5 w-5 items-center justify-center rounded-full transition-all duration-300 ${
             isDark
-              ? "left-[46px] bg-white text-black"
-              : "left-[4px] bg-black text-yellow-400"
+              ? "left-[30px] bg-white text-black"
+              : "left-[3px] bg-black text-yellow-400"
           }`}
         >
           {isDark ? <MoonIcon /> : <SunIcon />}
