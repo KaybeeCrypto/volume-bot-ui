@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
+import DevDisclaimer from "@/components/DevDisclaimer";
 import SideMenu from "@/components/SideMenu";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useLogout } from "@/hooks/useLogout";
@@ -147,6 +148,7 @@ export default function ReferralsPage() {
         session={session}
         onLogout={handleLogout}
       />
+      <DevDisclaimer />
 
       <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-6 sm:px-6 lg:px-8">
         <section className="mb-6 rounded-3xl border border-black/10 bg-gradient-to-b from-white to-neutral-50 p-5 shadow-sm sm:p-6">
