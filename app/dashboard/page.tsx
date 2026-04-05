@@ -337,7 +337,7 @@ export default function VolumeBotDashboardPage() {
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8 lg:py-14">
         <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <p className="mb-3 inline-flex rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-black/55">
                 Live session overview
@@ -346,27 +346,6 @@ export default function VolumeBotDashboardPage() {
               <p className="mt-3 max-w-3xl text-sm leading-6 text-black/60 sm:text-base">
                 Monitor current token session, wallet participation, buy and sell cycle flow, and daily usage limits from one control panel.
               </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setSessionStatus("Running")}
-                className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
-              >
-                Start Bot
-              </button>
-              <button
-                onClick={() => setSessionStatus("Paused")}
-                className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
-              >
-                Pause
-              </button>
-              <button
-                onClick={() => setSessionStatus("Stopped")}
-                className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black"
-              >
-                Stop
-              </button>
             </div>
           </div>
 
@@ -462,6 +441,35 @@ export default function VolumeBotDashboardPage() {
               {tokenLookupError && (
                 <p className="mb-4 text-sm text-red-600">{tokenLookupError}</p>
               )}
+
+              <div className="mb-6">
+                <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45">
+                  Session controls
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSessionStatus("Running")}
+                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+                  >
+                    Start Bot
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSessionStatus("Paused")}
+                    className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+                  >
+                    Pause
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSessionStatus("Stopped")}
+                    className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black"
+                  >
+                    Stop
+                  </button>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <InfoRow label="Token Used in Session" value={summary.tokenName} />
