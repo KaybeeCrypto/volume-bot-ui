@@ -50,21 +50,15 @@ export default function VolumeBotDashboardPage() {
     disconnectWallet: async () => {
       try {
         await disconnect();
-      } catch {
-        // ignore disconnect errors
-      }
+      } catch {}
 
       try {
         select(null);
-      } catch {
-        // ignore adapter reset errors
-      }
+      } catch {}
 
       try {
         localStorage.removeItem("walletName");
-      } catch {
-        // ignore storage errors
-      }
+      } catch {}
     },
     onLoggedOut: async () => {
       await refreshSession();
@@ -327,13 +321,13 @@ export default function VolumeBotDashboardPage() {
         <section className="rounded-[28px] border border-cyan-200 bg-cyan-50 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)] dark:border-cyan-400/20 dark:bg-cyan-400/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
                 Setup Required
               </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-black">
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-black dark:text-white">
                 {pendingPurchase.tierName} purchased
               </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-black/65">
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-black/65 dark:text-white/65">
                 Payment has been marked as complete for the {pendingPurchase.tierName} tier.
                 Configure the bot first. The session will not start automatically.
               </p>
@@ -345,7 +339,7 @@ export default function VolumeBotDashboardPage() {
                 localStorage.removeItem("pmpr_pending_purchase");
                 setPendingPurchase(null);
               }}
-              className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+              className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
             >
               Dismiss Notice
             </button>
@@ -360,13 +354,15 @@ export default function VolumeBotDashboardPage() {
               <p className="mb-3 inline-flex rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-black/55 dark:border-white/10 dark:text-white/55">
                 Live session overview
               </p>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">PMPR Dashboard</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-black/60 sm:text-base">
+              <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-white sm:text-4xl">
+                PMPR Dashboard
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-black/60 dark:text-white/60 sm:text-base">
                 Monitor current token session, wallet participation, buy and sell cycle flow, and daily usage limits from one control panel.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 rounded-[28px] border border-black/10 bg-black/[0.02] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.03)] sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 rounded-[28px] border border-black/10 bg-black/[0.02] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.03)] dark:border-white/10 dark:bg-white/[0.04] sm:grid-cols-2 xl:grid-cols-4">
               <TopSummaryPill label="Session" value={<StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />} />
               <TopSummaryPill label="Current Token" value={summary.tokenName} />
               <TopSummaryPill label="Active Wallets" value={`${summary.activeWallets} / ${summary.totalWallets}`} />
@@ -390,14 +386,14 @@ export default function VolumeBotDashboardPage() {
             />
           </div>
 
-          <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-7">
+          <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-slate-900 sm:p-7">
             <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-semibold tracking-tight text-black">Token Chart</h2>
+                  <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">Token Chart</h2>
                   <StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />
                 </div>
-                <p className="mt-2 text-sm leading-6 text-black/58">
+                <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">
                   {summary.tokenAddress
                     ? `Tracking ${summary.tokenName} (${summary.tokenAddressDisplay}) in the current session.`
                     : "Live GeckoTerminal chart for the active Solana token."}
@@ -405,13 +401,14 @@ export default function VolumeBotDashboardPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
+                <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75">
                   {summary.geckoMode === "pools" ? "Solana pool" : "Solana token"}
                 </span>
               </div>
             </div>
 
-            <GeckoTerminalChart
+            {summary.tokenAddress ? (
+              <GeckoTerminalChart
                 mode={summary.geckoMode}
                 address={summary.tokenAddress}
                 height={560}
@@ -423,10 +420,10 @@ export default function VolumeBotDashboardPage() {
                 bgColor={theme === "light" ? "ffffff" : "020617"}
               />
             ) : (
-              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55">
+              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55 dark:border-white/15 dark:text-white/55">
                 No Solana token configured yet. Enter a token address in Session / Bot Config to load the chart.
               </div>
-            )
+            )}
           </section>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -435,8 +432,8 @@ export default function VolumeBotDashboardPage() {
               title="Session / Bot Config"
               description="Core runtime settings for the active token session."
             >
-              <div className="mb-6 rounded-2xl border border-black/10 bg-black/[0.02] p-4">
-                <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45">
+              <div className="mb-6 rounded-2xl border border-black/10 bg-black/[0.02] p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
                   Token configuration
                 </p>
 
@@ -446,40 +443,40 @@ export default function VolumeBotDashboardPage() {
                     value={tokenAddressInput}
                     onChange={(e) => setTokenAddressInput(e.target.value)}
                     placeholder="Enter Solana token address"
-                    className="flex-1 rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black"
+                    className="flex-1 rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-white"
                   />
                   <div className="flex gap-3">
                     <button
                       type="button"
                       onClick={handleSaveToken}
                       disabled={tokenLookupLoading}
-                      className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-black"
                     >
                       {tokenLookupLoading ? "Saving..." : "Save Token"}
                     </button>
                     <button
                       type="button"
                       onClick={handleClearToken}
-                      className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+                      className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
                     >
                       Clear
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-black/60">
+                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-black/60 dark:text-white/60">
                   <span>
                     Current token:{" "}
-                    <span className="font-medium text-black">{summary.tokenName}</span>
+                    <span className="font-medium text-black dark:text-white">{summary.tokenName}</span>
                   </span>
                   <span>
                     Address:{" "}
-                    <span className="font-medium text-black">{summary.tokenAddressDisplay}</span>
+                    <span className="font-medium text-black dark:text-white">{summary.tokenAddressDisplay}</span>
                   </span>
                 </div>
 
                 {tokenLookupLoading && (
-                  <p className="mt-3 text-sm text-black/55">Fetching token info...</p>
+                  <p className="mt-3 text-sm text-black/55 dark:text-white/55">Fetching token info...</p>
                 )}
 
                 {tokenLookupError && (
@@ -487,8 +484,8 @@ export default function VolumeBotDashboardPage() {
                 )}
               </div>
 
-              <div className="mb-6 rounded-2xl border border-black/10 bg-black/[0.02] p-4">
-                <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45">
+              <div className="mb-6 rounded-2xl border border-black/10 bg-black/[0.02] p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
                   Session controls
                 </p>
                 <div className="flex flex-wrap gap-3">
@@ -531,9 +528,11 @@ export default function VolumeBotDashboardPage() {
                 <InfoRow label="Max Cycles" value={String(summary.maxCycles)} />
               </div>
 
-              <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.025] p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45">Session note</p>
-                <p className="mt-2 text-sm leading-6 text-black/65">{getSessionHelperText()}</p>
+              <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.025] p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45 dark:text-white/45">
+                  Session note
+                </p>
+                <p className="mt-2 text-sm leading-6 text-black/65 dark:text-white/65">{getSessionHelperText()}</p>
               </div>
             </SectionCard>
 
@@ -548,17 +547,20 @@ export default function VolumeBotDashboardPage() {
                 <MiniMetric label="Failed" value={String(summary.failedWallets)} />
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-2xl border border-black/10">
-                <div className="grid grid-cols-4 border-b border-black/10 bg-black/[0.03] px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45">
+              <div className="mt-6 overflow-hidden rounded-2xl border border-black/10 dark:border-white/10">
+                <div className="grid grid-cols-4 border-b border-black/10 bg-black/[0.03] px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/45">
                   <span>Wallet</span>
                   <span>Status</span>
                   <span>Last Action</span>
                   <span>Last Trade</span>
                 </div>
-                <div className="divide-y divide-black/10">
+                <div className="divide-y divide-black/10 dark:divide-white/10">
                   {walletRows.map((wallet) => (
-                    <div key={wallet.address} className="grid grid-cols-4 px-4 py-3 text-sm text-black/75 transition hover:bg-black/[0.02]">
-                      <span className="font-medium text-black">{wallet.address}</span>
+                    <div
+                      key={wallet.address}
+                      className="grid grid-cols-4 px-4 py-3 text-sm text-black/75 transition hover:bg-black/[0.02] dark:text-white/75 dark:hover:bg-white/[0.03]"
+                    >
+                      <span className="font-medium text-black dark:text-white">{wallet.address}</span>
                       <span>
                         <StatusBadge
                           label={wallet.status}
@@ -566,12 +568,12 @@ export default function VolumeBotDashboardPage() {
                             wallet.status === "Active"
                               ? "Active"
                               : wallet.status === "Idle"
-                                ? "Idle"
-                                : "Failed"
+                              ? "Idle"
+                              : "Failed"
                           }
                         />
                       </span>
-                      <span className="font-medium text-black">{wallet.lastAction}</span>
+                      <span className="font-medium text-black dark:text-white">{wallet.lastAction}</span>
                       <span>{wallet.lastTrade}</span>
                     </div>
                   ))}
@@ -601,13 +603,13 @@ export default function VolumeBotDashboardPage() {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <button className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90">
+                <button className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 dark:bg-white dark:text-black">
                   Start New Cycle Batch
                 </button>
-                <button className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white">
+                <button className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black">
                   Pause Execution
                 </button>
-                <button className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black">
+                <button className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black dark:border-white/15 dark:text-white/70 dark:hover:border-white dark:hover:text-white">
                   Reset Counters
                 </button>
               </div>
@@ -621,11 +623,13 @@ export default function VolumeBotDashboardPage() {
                 <InfoRow label="Estimated Cycles Left" value={String(summary.estimatedCyclesLeft)} />
               </div>
 
-              <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.025] p-5">
+              <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.025] p-5 dark:border-white/10 dark:bg-white/[0.04]">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-medium">Usage condition</p>
-                    <p className="mt-1 text-sm text-black/55">The dashboard keeps the most important throughput numbers visible at all times.</p>
+                    <p className="text-sm font-medium text-black dark:text-white">Usage condition</p>
+                    <p className="mt-1 text-sm text-black/55 dark:text-white/55">
+                      The dashboard keeps the most important throughput numbers visible at all times.
+                    </p>
                   </div>
                   <StatusBadge
                     label={summary.dailyUsed >= summary.dailyLimit ? "Limit Reached" : "Within Limit"}
@@ -637,10 +641,10 @@ export default function VolumeBotDashboardPage() {
           </div>
 
           <SectionCard id="activity" title="Recent Activity" description="Latest actions executed by the bot across active wallets.">
-            <div className="overflow-x-auto rounded-2xl border border-black/10">
+            <div className="overflow-x-auto rounded-2xl border border-black/10 dark:border-white/10">
               <table className="min-w-full border-separate border-spacing-0 text-left">
                 <thead>
-                  <tr className="bg-black/[0.03] text-xs uppercase tracking-[0.16em] text-black/45">
+                  <tr className="bg-black/[0.03] text-xs uppercase tracking-[0.16em] text-black/45 dark:bg-white/[0.04] dark:text-white/45">
                     <th className="px-4 py-3 font-medium">Time</th>
                     <th className="px-4 py-3 font-medium">Wallet</th>
                     <th className="px-4 py-3 font-medium">Action</th>
@@ -653,16 +657,18 @@ export default function VolumeBotDashboardPage() {
                   {recentActivity.map((item, index) => (
                     <tr
                       key={`${item.wallet}-${index}`}
-                      className={`text-sm text-black/75 transition hover:bg-black/[0.02] ${
-                        index % 2 === 0 ? "bg-white" : "bg-black/[0.01]"
+                      className={`text-sm text-black/75 transition hover:bg-black/[0.02] dark:text-white/75 dark:hover:bg-white/[0.03] ${
+                        index % 2 === 0
+                          ? "bg-white dark:bg-slate-900"
+                          : "bg-black/[0.01] dark:bg-white/[0.02]"
                       }`}
                     >
-                      <td className="border-t border-black/10 px-4 py-4">{item.time}</td>
-                      <td className="border-t border-black/10 px-4 py-4 font-medium text-black">{item.wallet}</td>
-                      <td className="border-t border-black/10 px-4 py-4 font-medium text-black">{item.action}</td>
-                      <td className="border-t border-black/10 px-4 py-4">{item.amount}</td>
-                      <td className="border-t border-black/10 px-4 py-4">{item.token}</td>
-                      <td className="border-t border-black/10 px-4 py-4">
+                      <td className="border-t border-black/10 px-4 py-4 dark:border-white/10">{item.time}</td>
+                      <td className="border-t border-black/10 px-4 py-4 font-medium text-black dark:border-white/10 dark:text-white">{item.wallet}</td>
+                      <td className="border-t border-black/10 px-4 py-4 font-medium text-black dark:border-white/10 dark:text-white">{item.action}</td>
+                      <td className="border-t border-black/10 px-4 py-4 dark:border-white/10">{item.amount}</td>
+                      <td className="border-t border-black/10 px-4 py-4 dark:border-white/10">{item.token}</td>
+                      <td className="border-t border-black/10 px-4 py-4 dark:border-white/10">
                         <StatusBadge
                           label={item.status}
                           variant={item.status === "Limited" ? "Limited" : "Success"}
@@ -812,17 +818,17 @@ function StatusBadge({ label, variant }: StatusBadgeProps) {
   const resolvedVariant = variant || "Idle";
 
   const styles: Record<StatusBadgeVariant, string> = {
-  Running: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
-  Paused: "border-black/20 bg-black/[0.08] text-black dark:border-white/15 dark:bg-white/10 dark:text-white",
-  Stopped: "border-black/10 bg-white text-black/70 dark:border-white/10 dark:bg-slate-900 dark:text-white/70",
-  Success: "border-black bg-black/[0.9] text-white dark:border-white dark:bg-white dark:text-black",
-  Limited: "border-black/15 bg-black/[0.06] text-black dark:border-white/10 dark:bg-white/10 dark:text-white",
-  Active: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
-  Idle: "border-black/10 bg-black/[0.04] text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75",
-  Failed: "border-black/30 bg-black/[0.12] text-black dark:border-white/20 dark:bg-white/15 dark:text-white",
-  "Within Limit": "border-black/10 bg-black/[0.04] text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75",
-  "Limit Reached": "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
-};
+    Running: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+    Paused: "border-black/20 bg-black/[0.08] text-black dark:border-white/15 dark:bg-white/10 dark:text-white",
+    Stopped: "border-black/10 bg-white text-black/70 dark:border-white/10 dark:bg-slate-900 dark:text-white/70",
+    Success: "border-black bg-black/[0.9] text-white dark:border-white dark:bg-white dark:text-black",
+    Limited: "border-black/15 bg-black/[0.06] text-black dark:border-white/10 dark:bg-white/10 dark:text-white",
+    Active: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+    Idle: "border-black/10 bg-black/[0.04] text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75",
+    Failed: "border-black/30 bg-black/[0.12] text-black dark:border-white/20 dark:bg-white/15 dark:text-white",
+    "Within Limit": "border-black/10 bg-black/[0.04] text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75",
+    "Limit Reached": "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+  };
 
   return (
     <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${styles[resolvedVariant]}`}>

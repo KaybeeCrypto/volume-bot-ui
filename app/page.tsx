@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { useLogout } from "@/hooks/useLogout";
@@ -218,7 +217,7 @@ export default function Home() {
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <button
                 onClick={() => openPurchaseFlow("trial")}
-                className={`rounded-lg bg-black py-3 font-semibold text-white transition hover:opacity-90 ${
+                className={`rounded-lg bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black ${
                   session ? "px-10 sm:min-w-[220px]" : "px-6"
                 }`}
               >
@@ -252,7 +251,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl gap-4 rounded-2xl border border-gray-200 bg-white p-5 md:grid-cols-3 dark:border-white/10 dark:bg-slate-900">
           <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
             <p className="text-sm font-semibold text-gray-400 dark:text-white/40">Pricing Edge</p>
-            <p className="mt-2 text-lg font-bold text-black">
+            <p className="mt-2 text-lg font-bold text-black dark:text-white">
               71% cheaper per $100K volume
             </p>
             <p className="mt-1 text-sm text-gray-500 dark:text-white/60">vs Boost Legends</p>
@@ -262,7 +261,7 @@ export default function Home() {
             <p className="text-sm font-semibold text-gray-400 dark:text-white/40">
               Built For Speed
             </p>
-            <p className="mt-2 text-lg font-bold text-black">
+            <p className="mt-2 text-lg font-bold text-black dark:text-white">
               Simple tier → pay → run flow
             </p>
             <p className="mt-1 text-sm text-gray-500 dark:text-white/60">No unnecessary steps</p>
@@ -270,7 +269,7 @@ export default function Home() {
 
           <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
             <p className="text-sm font-semibold text-gray-400 dark:text-white/40">Included</p>
-            <p className="mt-2 text-lg font-bold text-black">
+            <p className="mt-2 text-lg font-bold text-black dark:text-white">
               Reactions included
             </p>
             <p className="mt-1 text-sm text-gray-500 dark:text-white/60">Clearer social proof</p>
@@ -358,17 +357,17 @@ export default function Home() {
                   {TIERS.trial.subtitle}
                 </p>
               </div>
-              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
+              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
                 Reactions included
               </div>
-              <ul className="mt-8 space-y-3 text-sm text-gray-600">
+              <ul className="mt-8 space-y-3 text-sm text-gray-600 dark:text-white/70">
                 {TIERS.trial.features.map((feature) => (
                   <li key={feature}>✔ {feature}</li>
                 ))}
               </ul>
               <button
                 onClick={() => openPurchaseFlow("trial")}
-                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
+                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
               >
                 Start Free Trial
               </button>
@@ -379,24 +378,24 @@ export default function Home() {
                 Basic
               </p>
               <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">
+                <p className="text-4xl font-bold tracking-tight dark:text-white">
                   {formatPrice(TIERS.basic.priceSol)}
                 </p>
                 <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
                   {TIERS.basic.subtitle}
                 </p>
               </div>
-              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
+              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
                 Reactions included
               </div>
-              <ul className="mt-8 space-y-3 text-sm text-gray-600">
+              <ul className="mt-8 space-y-3 text-sm text-gray-600 dark:text-white/70">
                 {TIERS.basic.features.map((feature) => (
                   <li key={feature}>✔ {feature}</li>
                 ))}
               </ul>
               <button
                 onClick={() => openPurchaseFlow("basic")}
-                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
+                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
               >
                 Select Basic
               </button>
@@ -438,24 +437,24 @@ export default function Home() {
                 Pro
               </p>
               <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">
+                <p className="text-4xl font-bold tracking-tight dark:text-white">
                   {formatPrice(TIERS.pro.priceSol)}
                 </p>
                 <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
                   {TIERS.pro.subtitle}
                 </p>
               </div>
-              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700">
+              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
                 Reactions included
               </div>
-              <ul className="mt-8 space-y-3 text-sm text-gray-600">
+              <ul className="mt-8 space-y-3 text-sm text-gray-600 dark:text-white/70">
                 {TIERS.pro.features.map((feature) => (
                   <li key={feature}>✔ {feature}</li>
                 ))}
               </ul>
               <button
                 onClick={() => openPurchaseFlow("pro")}
-                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90"
+                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
               >
                 Select Pro
               </button>
@@ -544,11 +543,11 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Product
               </p>
-              <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li><a href="#pricing" className="hover:text-black">Buy Session</a></li>
-                <li><a href="/dashboard" className="hover:text-black">Dashboard</a></li>
-                <li><a href="/sessions" className="hover:text-black">Sessions</a></li>
-                <li><a href="/referrals" className="hover:text-black">Referrals</a></li>
+              <ul className="mt-4 space-y-3 text-sm text-gray-600 dark:text-white/65">
+                <li><a href="#pricing" className="hover:text-black dark:hover:text-white">Buy Session</a></li>
+                <li><a href="/dashboard" className="hover:text-black dark:hover:text-white">Dashboard</a></li>
+                <li><a href="/sessions" className="hover:text-black dark:hover:text-white">Sessions</a></li>
+                <li><a href="/referrals" className="hover:text-black dark:hover:text-white">Referrals</a></li>
               </ul>
             </div>
 
@@ -556,10 +555,10 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Company
               </p>
-              <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li><a href="#" className="hover:text-black">About</a></li>
-                <li><a href="#" className="hover:text-black">Support</a></li>
-                <li><a href="#" className="hover:text-black">Contact</a></li>
+              <ul className="mt-4 space-y-3 text-sm text-gray-600 dark:text-white/65">
+                <li><a href="#" className="hover:text-black dark:hover:text-white">About</a></li>
+                <li><a href="#" className="hover:text-black dark:hover:text-white">Support</a></li>
+                <li><a href="#" className="hover:text-black dark:hover:text-white">Contact</a></li>
               </ul>
             </div>
 
@@ -567,21 +566,21 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Legal
               </p>
-              <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li><a href="#" className="hover:text-black">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-black">Privacy Policy</a></li>
+              <ul className="mt-4 space-y-3 text-sm text-gray-600 dark:text-white/65">
+                <li><a href="#" className="hover:text-black dark:hover:text-white">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-black dark:hover:text-white">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 md:flex-row">
+          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 dark:border-white/10 md:flex-row">
             <p className="text-sm text-gray-500 dark:text-white/60">©2026 PMPR. All rights reserved.</p>
 
             <div className="flex items-center gap-4">
-              <a href="#" className="text-sm text-gray-500 dark:text-white/60 hover:text-black">
+              <a href="#" className="text-sm text-gray-500 hover:text-black dark:text-white/60 dark:hover:text-white">
                 Telegram
               </a>
-              <a href="#" className="text-sm text-gray-500 dark:text-white/60 hover:text-black">
+              <a href="#" className="text-sm text-gray-500 hover:text-black dark:text-white/60 dark:hover:text-white">
                 Support
               </a>
             </div>
