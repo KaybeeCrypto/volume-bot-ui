@@ -37,16 +37,16 @@ export default function AppHeader({
       </button>
 
       <button
-        type="button"
-        onClick={onLogoClick}
-        className="absolute left-1/2 -translate-x-1/2 transition hover:opacity-90"
-        aria-label="Go to main page"
-      >
+          type="button"
+          onClick={onLogoClick}
+          className="absolute left-1/2 max-w-[120px] -translate-x-1/2 transition hover:opacity-90 sm:max-w-[150px] md:max-w-none"
+          aria-label="Go to main page"
+        >
         <Image
           src="/logo.png"
           alt="VolumeBot logo"
-          width={300}
-          height={60}
+          width={220}
+          height={44}
           priority
         />
       </button>
@@ -57,7 +57,7 @@ export default function AppHeader({
           session={session}
           onLogout={onLogout}
           onConnect={onConnect}
-          loggedOutLabel="Connect Wallet"
+          loggedOutLabel="Connect"
         />
       </div>
     </header>

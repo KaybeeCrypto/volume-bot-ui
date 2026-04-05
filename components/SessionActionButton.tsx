@@ -90,7 +90,7 @@ export default function SessionActionButton({
           aria-haspopup="menu"
           aria-expanded={menuOpen}
         >
-          <span className="inline-flex h-full w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white dark:bg-slate-950">
+          <span className="inline-flex h-full w-full items-center justify-center gap-1.5 rounded-full bg-black px-3 sm:px-5 text-sm font-semibold text-white dark:bg-slate-950">
             <span className="h-2 w-2 rounded-full bg-green-400" />
             <span>{formatAddress(session.address)}</span>
             <span
@@ -156,7 +156,7 @@ export default function SessionActionButton({
         fullWidth ? "w-full" : ""
       }`}
     >
-      <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white dark:bg-slate-950">
+      <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-black px-3 sm:px-5 text-sm font-semibold text-white dark:bg-slate-950">
         {loggedOutLabel}
       </span>
     </button>
