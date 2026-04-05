@@ -113,16 +113,13 @@ export default function SideMenu({
             )}
 
             <SessionActionButton
-              fullWidth
-              sessionLoading={sessionLoading}
-              session={session}
-              onLogout={onLogout}
-              onConnect={onConnect}
-              classNameWhenLoggedIn="rounded-lg border px-4 py-3 text-sm font-semibold transition"
-              idleLoggedInClassName="border-white/20 text-white hover:bg-white/10"
-              hoverLoggedInClassName="border-red-500 bg-red-500 text-white"
-              classNameWhenLoggedOut="rounded-lg border border-white/20 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            />
+                fullWidth
+                sessionLoading={sessionLoading}
+                session={session}
+                onLogout={onLogout}
+                onConnect={onConnect}
+                loggedOutLabel="Connect Wallet"
+              />
           </div>
         </div>
       </div>
