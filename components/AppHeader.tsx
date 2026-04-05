@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import SessionActionButton from "@/components/SessionActionButton";
+import DevDisclaimer from "@/components/DevDisclaimer";
 
 type SessionLike = {
   address: string;

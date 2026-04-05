@@ -8,6 +8,7 @@ import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useRequireSession } from "@/hooks/useRequireSession";
 import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
+import DevDisclaimer from "@/components/DevDisclaimer";
 import GeckoTerminalChart from "@/components/GeckoTerminalChart";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useTheme } from "@/components/ThemeProvider";
@@ -316,6 +317,7 @@ export default function VolumeBotDashboardPage() {
         session={session}
         onLogout={handleLogout}
       />
+      <DevDisclaimer />
 
       {pendingPurchase?.setupRequired && (
         <section className="rounded-[28px] border border-cyan-200 bg-cyan-50 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)] dark:border-cyan-400/20 dark:bg-cyan-400/10">

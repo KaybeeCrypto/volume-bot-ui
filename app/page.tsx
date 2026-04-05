@@ -12,6 +12,7 @@ import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import PurchaseTierModal from "@/components/PurchaseTierModal";
 import { TIERS, type TierConfig, type TierKey } from "@/lib/tiers";
+import DevDisclaimer from "@/components/DevDisclaimer";
 
 export default function Home() {
   const router = useRouter();
@@ -188,7 +189,7 @@ export default function Home() {
         onPaymentComplete={handlePaymentComplete}
       />
 
-      <AppHeader
+            <AppHeader
         onMenuOpen={() => setMenuOpen(true)}
         onLogoClick={handleHeaderLogoClick}
         sessionLoading={sessionLoading}
@@ -196,6 +197,8 @@ export default function Home() {
         onLogout={handleLogout}
         onConnect={openConnectForDashboard}
       />
+
+      <DevDisclaimer />
 
       <section className="px-6 py-28">
         <div className="mx-auto flex max-w-7xl flex-col-reverse items-center gap-10 md:flex-row md:justify-between">
