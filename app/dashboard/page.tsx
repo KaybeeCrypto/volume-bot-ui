@@ -10,6 +10,7 @@ import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
 import GeckoTerminalChart from "@/components/GeckoTerminalChart";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { useTheme } from "@/components/ThemeProvider";
 
 type DashboardSummary = {
   tokenName: string;
@@ -43,6 +44,7 @@ export default function VolumeBotDashboardPage() {
   const [tokenLookupError, setTokenLookupError] = useState("");
   const { session, loading: sessionLoading, refreshSession } = useAuthSession();
   const { disconnect, select } = useWallet();
+  const { theme } = useTheme();
 
   const { handleLogout } = useLogout({
     disconnectWallet: async () => {
@@ -226,8 +228,8 @@ export default function VolumeBotDashboardPage() {
 
   if (sessionLoading || !session) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-white text-black">
-        <p className="text-sm text-black/60">Checking session...</p>
+      <main className="flex min-h-screen items-center justify-center bg-white text-black dark:bg-slate-950 dark:text-white">
+        <p className="text-sm text-black/60 dark:text-white/60">Checking session...</p>
       </main>
     );
   }
@@ -303,7 +305,7 @@ export default function VolumeBotDashboardPage() {
   const cycleUsagePercent = Math.min((summary.completedCycles / summary.maxCycles) * 100, 100);
 
   return (
-    <main className="min-h-screen bg-white text-black">
+    <main className="min-h-screen bg-white text-black dark:bg-slate-950 dark:text-white">
       <SideMenu
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -322,7 +324,7 @@ export default function VolumeBotDashboardPage() {
       />
 
       {pendingPurchase?.setupRequired && (
-        <section className="rounded-[28px] border border-cyan-200 bg-cyan-50 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
+        <section className="rounded-[28px] border border-cyan-200 bg-cyan-50 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)] dark:border-cyan-400/20 dark:bg-cyan-400/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
@@ -355,7 +357,7 @@ export default function VolumeBotDashboardPage() {
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-5">
             <div>
-              <p className="mb-3 inline-flex rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-black/55">
+              <p className="mb-3 inline-flex rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-black/55 dark:border-white/10 dark:text-white/55">
                 Live session overview
               </p>
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">PMPR Dashboard</h1>
@@ -409,23 +411,22 @@ export default function VolumeBotDashboardPage() {
               </div>
             </div>
 
-            {summary.tokenAddress ? (
-              <GeckoTerminalChart
+            <GeckoTerminalChart
                 mode={summary.geckoMode}
                 address={summary.tokenAddress}
                 height={560}
                 chartType="price"
                 resolution="15m"
-                lightChart={true}
+                lightChart={theme === "light"}
                 showInfo={false}
                 showSwaps={false}
-                bgColor="ffffff"
+                bgColor={theme === "light" ? "ffffff" : "020617"}
               />
             ) : (
               <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55">
                 No Solana token configured yet. Enter a token address in Session / Bot Config to load the chart.
               </div>
-            )}
+            )
           </section>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -686,9 +687,11 @@ type TopSummaryPillProps = {
 
 function TopSummaryPill({ label, value }: TopSummaryPillProps) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
-      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45">{label}</p>
-      <div className="mt-2 text-sm font-semibold text-black">{value}</div>
+    <div className="rounded-2xl border border-black/10 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900">
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+        {label}
+      </p>
+      <div className="mt-2 text-sm font-semibold text-black dark:text-white">{value}</div>
     </div>
   );
 }
@@ -701,10 +704,12 @@ type KpiCardProps = {
 
 function KpiCard({ label, value, subvalue }: KpiCardProps) {
   return (
-    <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-      <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45">{label}</p>
-      <p className="mt-4 text-2xl font-semibold tracking-tight text-black">{value}</p>
-      <p className="mt-2 text-sm text-black/55">{subvalue}</p>
+    <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:border-white/10 dark:bg-slate-900">
+      <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45 dark:text-white/45">
+        {label}
+      </p>
+      <p className="mt-4 text-2xl font-semibold tracking-tight text-black dark:text-white">{value}</p>
+      <p className="mt-2 text-sm text-black/55 dark:text-white/55">{subvalue}</p>
     </div>
   );
 }
@@ -720,11 +725,11 @@ function SectionCard({ title, description, children, id }: SectionCardProps) {
   return (
     <section
       id={id}
-      className="rounded-[28px] border border-black/10 bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)] sm:p-7"
+      className="rounded-[28px] border border-black/10 bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)] dark:border-white/10 dark:bg-slate-900 sm:p-7"
     >
       <div className="mb-6">
-        <h2 className="text-xl font-semibold tracking-tight text-black">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-black/58">{description}</p>
+        <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">{description}</p>
       </div>
       {children}
     </section>
@@ -738,9 +743,11 @@ type InfoRowProps = {
 
 function InfoRow({ label, value }: InfoRowProps) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-4">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45">{label}</p>
-      <div className="mt-3 text-base font-semibold text-black">{value}</div>
+    <div className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-slate-950">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+        {label}
+      </p>
+      <div className="mt-3 text-base font-semibold text-black dark:text-white">{value}</div>
     </div>
   );
 }
@@ -752,9 +759,11 @@ type MiniMetricProps = {
 
 function MiniMetric({ label, value }: MiniMetricProps) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-4">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45">{label}</p>
-      <p className="mt-3 text-xl font-semibold text-black">{value}</p>
+    <div className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-slate-950">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+        {label}
+      </p>
+      <p className="mt-3 text-xl font-semibold text-black dark:text-white">{value}</p>
     </div>
   );
 }
@@ -769,11 +778,14 @@ function ProgressBlock({ label, value, percent }: ProgressBlockProps) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-4">
-        <p className="text-sm font-medium text-black">{label}</p>
-        <p className="text-sm text-black/55">{value}</p>
+        <p className="text-sm font-medium text-black dark:text-white">{label}</p>
+        <p className="text-sm text-black/55 dark:text-white/55">{value}</p>
       </div>
-      <div className="h-3 w-full overflow-hidden rounded-full bg-black/8">
-        <div className="h-full rounded-full bg-black transition-all" style={{ width: `${percent}%` }} />
+      <div className="h-3 w-full overflow-hidden rounded-full bg-black/8 dark:bg-white/10">
+        <div
+          className="h-full rounded-full bg-black transition-all dark:bg-white"
+          style={{ width: `${percent}%` }}
+        />
       </div>
     </div>
   );
@@ -800,17 +812,17 @@ function StatusBadge({ label, variant }: StatusBadgeProps) {
   const resolvedVariant = variant || "Idle";
 
   const styles: Record<StatusBadgeVariant, string> = {
-    Running: "border-black bg-black text-white",
-    Paused: "border-black/20 bg-black/[0.08] text-black",
-    Stopped: "border-black/10 bg-white text-black/70",
-    Success: "border-black bg-black/[0.9] text-white",
-    Limited: "border-black/15 bg-black/[0.06] text-black",
-    Active: "border-black bg-black text-white",
-    Idle: "border-black/10 bg-black/[0.04] text-black/75",
-    Failed: "border-black/30 bg-black/[0.12] text-black",
-    "Within Limit": "border-black/10 bg-black/[0.04] text-black/75",
-    "Limit Reached": "border-black bg-black text-white",
-  };
+  Running: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+  Paused: "border-black/20 bg-black/[0.08] text-black dark:border-white/15 dark:bg-white/10 dark:text-white",
+  Stopped: "border-black/10 bg-white text-black/70 dark:border-white/10 dark:bg-slate-900 dark:text-white/70",
+  Success: "border-black bg-black/[0.9] text-white dark:border-white dark:bg-white dark:text-black",
+  Limited: "border-black/15 bg-black/[0.06] text-black dark:border-white/10 dark:bg-white/10 dark:text-white",
+  Active: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+  Idle: "border-black/10 bg-black/[0.04] text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75",
+  Failed: "border-black/30 bg-black/[0.12] text-black dark:border-white/20 dark:bg-white/15 dark:text-white",
+  "Within Limit": "border-black/10 bg-black/[0.04] text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75",
+  "Limit Reached": "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+};
 
   return (
     <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${styles[resolvedVariant]}`}>
@@ -821,16 +833,16 @@ function StatusBadge({ label, variant }: StatusBadgeProps) {
 
 function getSessionControlButtonClass(isActive: boolean, tone: "primary" | "secondary" | "muted") {
   if (isActive) {
-    return "rounded-2xl border border-black bg-black px-5 py-3 text-sm font-medium text-white opacity-70 cursor-not-allowed";
+    return "cursor-not-allowed rounded-2xl border border-black bg-black px-5 py-3 text-sm font-medium text-white opacity-70 dark:border-white dark:bg-white dark:text-black";
   }
 
   if (tone === "primary") {
-    return "rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90";
+    return "rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 dark:bg-white dark:text-black";
   }
 
   if (tone === "secondary") {
-    return "rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white";
+    return "rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black";
   }
 
-  return "rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black";
+  return "rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black dark:border-white/15 dark:text-white/70 dark:hover:border-white dark:hover:text-white";
 }

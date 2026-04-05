@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import SessionActionButton from "@/components/SessionActionButton";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type SessionLike = {
   address: string;
@@ -47,7 +48,7 @@ export default function SideMenu({
       )}
 
       <div
-        className={`fixed top-0 left-0 z-50 flex h-full w-80 flex-col bg-slate-950 text-white shadow-2xl transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 z-50 flex h-full w-80 transform flex-col bg-slate-950 text-white shadow-2xl transition-transform duration-300 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -106,6 +107,10 @@ export default function SideMenu({
                 {primaryButtonLabel}
               </button>
             )}
+
+            <div className="w-full">
+              <ThemeToggle />
+            </div>
 
             <SessionActionButton
               fullWidth

@@ -24,7 +24,7 @@ export default function ConnectWalletModal({
         onClick={onClose}
       />
 
-      <div className="relative z-10 w-full max-w-md rounded-[28px] border border-white/60 bg-white p-8 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
+      <div className="relative z-10 w-full max-w-md rounded-[28px] border border-white/60 bg-white p-8 shadow-[0_30px_80px_rgba(0,0,0,0.25)] dark:border-white/10 dark:bg-slate-900">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-400">

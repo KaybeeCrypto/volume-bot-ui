@@ -155,7 +155,7 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-white text-black">
+    <main className="min-h-screen bg-white text-black dark:bg-slate-950 dark:text-white">
       <SideMenu
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -210,7 +210,7 @@ export default function Home() {
               Look Like Smart Money.
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-8 text-gray-500">
+            <p className="mt-6 max-w-xl text-lg leading-8 text-gray-500 dark:text-white/60">
               Automated Solana volume generation designed to simulate real market
               activity and help projects create stronger momentum from day one.
             </p>
@@ -228,7 +228,7 @@ export default function Home() {
               {!session && (
                 <button
                   onClick={openConnectForDashboard}
-                  className="rounded-lg border border-black px-6 py-3 font-semibold transition hover:bg-gray-100"
+                  className="rounded-lg border border-black px-6 py-3 font-semibold transition hover:bg-gray-100 dark:border-white dark:hover:bg-white/10"
                 >
                   Connect Wallet
                 </button>
@@ -249,31 +249,31 @@ export default function Home() {
       </section>
 
       <section className="px-6 pb-12">
-        <div className="mx-auto grid max-w-7xl gap-4 rounded-2xl border border-gray-200 bg-white p-5 md:grid-cols-3">
-          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left">
-            <p className="text-sm font-semibold text-gray-400">Pricing Edge</p>
+        <div className="mx-auto grid max-w-7xl gap-4 rounded-2xl border border-gray-200 bg-white p-5 md:grid-cols-3 dark:border-white/10 dark:bg-slate-900">
+          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
+            <p className="text-sm font-semibold text-gray-400 dark:text-white/40">Pricing Edge</p>
             <p className="mt-2 text-lg font-bold text-black">
               71% cheaper per $100K volume
             </p>
-            <p className="mt-1 text-sm text-gray-500">vs Boost Legends</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-white/60">vs Boost Legends</p>
           </div>
 
-          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left">
-            <p className="text-sm font-semibold text-gray-400">
+          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
+            <p className="text-sm font-semibold text-gray-400 dark:text-white/40">
               Built For Speed
             </p>
             <p className="mt-2 text-lg font-bold text-black">
               Simple tier → pay → run flow
             </p>
-            <p className="mt-1 text-sm text-gray-500">No unnecessary steps</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-white/60">No unnecessary steps</p>
           </div>
 
-          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left">
-            <p className="text-sm font-semibold text-gray-400">Included</p>
+          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
+            <p className="text-sm font-semibold text-gray-400 dark:text-white/40">Included</p>
             <p className="mt-2 text-lg font-bold text-black">
               Reactions included
             </p>
-            <p className="mt-1 text-sm text-gray-500">Clearer social proof</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-white/60">Clearer social proof</p>
           </div>
         </div>
       </section>
@@ -330,7 +330,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="pricing" className="bg-white px-6 py-24 text-black">
+      <section id="pricing" className="bg-white px-6 py-24 text-black dark:bg-slate-950 dark:text-white">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
@@ -339,22 +339,22 @@ export default function Home() {
             <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
               Simple tiers, clear pricing
             </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg text-gray-500">
+            <p className="mx-auto mt-5 max-w-2xl text-lg text-gray-500 dark:text-white/60">
               Choose the package that matches your target volume and session
               goals. All tiers include reactions.
             </p>
           </div>
 
           <div className="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
+            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Trial
               </p>
               <div className="mt-5">
                 <p className="text-4xl font-bold tracking-tight text-green-600">
                   {formatPrice(TIERS.trial.priceSol)}
                 </p>
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
                   {TIERS.trial.subtitle}
                 </p>
               </div>
@@ -374,15 +374,15 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
+            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Basic
               </p>
               <div className="mt-5">
                 <p className="text-4xl font-bold tracking-tight">
                   {formatPrice(TIERS.basic.priceSol)}
                 </p>
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
                   {TIERS.basic.subtitle}
                 </p>
               </div>
@@ -433,15 +433,15 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
+            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Pro
               </p>
               <div className="mt-5">
                 <p className="text-4xl font-bold tracking-tight">
                   {formatPrice(TIERS.pro.priceSol)}
                 </p>
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
                   {TIERS.pro.subtitle}
                 </p>
               </div>
@@ -526,22 +526,22 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-gray-200 bg-white px-6 py-16">
+      <footer className="border-t border-gray-200 bg-white px-6 py-16 dark:border-white/10 dark:bg-slate-950">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 md:grid-cols-4">
             <div>
               <div className="flex items-center gap-3">
                 <img src="/logo_bothead.png" alt="Logo" className="h-10 w-10" />
-                <p className="text-lg font-bold">PMPR</p>
+                <p className="text-lg font-bold text-black dark:text-white">PMPR</p>
               </div>
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-4 text-sm text-gray-500 dark:text-white/60">
                 Automated Solana volume generation designed to simulate real
                 market activity and help projects gain traction.
               </p>
             </div>
 
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Product
               </p>
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
@@ -553,7 +553,7 @@ export default function Home() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Company
               </p>
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
@@ -564,7 +564,7 @@ export default function Home() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
                 Legal
               </p>
               <ul className="mt-4 space-y-3 text-sm text-gray-600">
@@ -575,13 +575,13 @@ export default function Home() {
           </div>
 
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 md:flex-row">
-            <p className="text-sm text-gray-500">©2026 PMPR. All rights reserved.</p>
+            <p className="text-sm text-gray-500 dark:text-white/60">©2026 PMPR. All rights reserved.</p>
 
             <div className="flex items-center gap-4">
-              <a href="#" className="text-sm text-gray-500 hover:text-black">
+              <a href="#" className="text-sm text-gray-500 dark:text-white/60 hover:text-black">
                 Telegram
               </a>
-              <a href="#" className="text-sm text-gray-500 hover:text-black">
+              <a href="#" className="text-sm text-gray-500 dark:text-white/60 hover:text-black">
                 Support
               </a>
             </div>

@@ -76,9 +76,9 @@ export default function GeckoTerminalChart({
 
   return (
     <div
-      className={`w-full overflow-hidden rounded-2xl border border-black/10 bg-white ${className}`}
-      style={{ height }}
-    >
+        className={`w-full overflow-hidden rounded-2xl border border-black/10 bg-white dark:border-white/10 dark:bg-slate-950 ${className}`}
+        style={{ height }}
+      >
       <iframe
         title="GeckoTerminal Solana Chart"
         src={src}

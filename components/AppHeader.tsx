@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import SessionActionButton from "@/components/SessionActionButton";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type SessionLike = {
   address: string;
@@ -25,15 +26,15 @@ export default function AppHeader({
   onConnect,
 }: AppHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 relative flex items-center h-24 px-4 border-b border-gray-200 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 relative flex h-24 items-center border-b border-gray-200 bg-white/90 px-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90">
       <button
-        className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-md transition hover:bg-gray-100"
+        className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-md transition hover:bg-gray-100 dark:hover:bg-white/10"
         aria-label="Open menu"
         onClick={onMenuOpen}
       >
-        <span className="block w-6 h-0.5 bg-black"></span>
-        <span className="block w-6 h-0.5 bg-black"></span>
-        <span className="block w-6 h-0.5 bg-black"></span>
+        <span className="block h-0.5 w-6 bg-black dark:bg-white"></span>
+        <span className="block h-0.5 w-6 bg-black dark:bg-white"></span>
+        <span className="block h-0.5 w-6 bg-black dark:bg-white"></span>
       </button>
 
       <button
@@ -51,16 +52,18 @@ export default function AppHeader({
         />
       </button>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-3">
+        <ThemeToggle />
+
         <SessionActionButton
           sessionLoading={sessionLoading}
           session={session}
           onLogout={onLogout}
           onConnect={onConnect}
           classNameWhenLoggedIn="rounded-lg border px-5 py-2 font-semibold transition"
-          idleLoggedInClassName="border-black text-black hover:bg-gray-100"
-          hoverLoggedInClassName="border-black bg-black text-white"
-          classNameWhenLoggedOut="rounded-lg border border-black px-5 py-2 font-semibold transition hover:bg-black hover:text-white"
+          idleLoggedInClassName="border-black text-black hover:bg-gray-100 dark:border-white dark:text-white dark:hover:bg-white/10"
+          hoverLoggedInClassName="border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+          classNameWhenLoggedOut="rounded-lg border border-black px-5 py-2 font-semibold transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
         />
       </div>
     </header>
