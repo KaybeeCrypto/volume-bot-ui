@@ -53,27 +53,31 @@ export default function SideMenu({
         }`}
       >
         <div className="border-b border-white/10 px-5 py-5">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <img
                 src="/logo_bothead.png"
                 alt="Bot logo"
                 className="h-10 w-10 object-contain"
               />
 
-              <div>
+              <div className="min-w-0">
                 <p className="text-lg font-bold tracking-tight">PMPR</p>
                 <p className="text-sm text-white/60">PMPR Panel</p>
               </div>
             </div>
 
-            <button
-              onClick={onClose}
-              className="rounded-md px-2 py-1 text-2xl leading-none text-white/70 transition hover:bg-white/10 hover:text-white"
-              aria-label="Close menu"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+
+              <button
+                onClick={onClose}
+                className="rounded-md px-2 py-1 text-2xl leading-none text-white/70 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close menu"
+              >
+                ×
+              </button>
+            </div>
           </div>
         </div>
 
@@ -107,10 +111,6 @@ export default function SideMenu({
                 {primaryButtonLabel}
               </button>
             )}
-
-            <div className="w-full">
-              <ThemeToggle />
-            </div>
 
             <SessionActionButton
               fullWidth
