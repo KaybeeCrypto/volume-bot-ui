@@ -8,7 +8,7 @@ import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useRequireSession } from "@/hooks/useRequireSession";
 import AppHeader from "@/components/AppHeader";
 import SideMenu from "@/components/SideMenu";
-import TradingViewChart from "@/components/TradingViewChart";
+import GeckoTerminalChart from "@/components/GeckoTerminalChart";
 import { useWallet } from "@solana/wallet-adapter-react";
 
 
@@ -48,27 +48,27 @@ export default function VolumeBotDashboardPage() {
   useRequireSession(sessionLoading, session);
 
   const summary = useMemo(
-    () => ({
-      tokenName: "BOTHEAD",
-      tokenAddress: "7xKp...93Lm",
-      chartSymbol: "BINANCE:SOLUSDT",
-      completedCycles: 128,
-      cycleStatus: sessionStatus,
-      perBuyRate: "0.15 SOL",
-      dailyUsed: 12,
-      dailyLimit: 20,
-      activeWallets: 18,
-      totalWallets: 24,
-      buyCycles: 64,
-      sellCycles: 64,
-      maxCycles: 200,
-      idleWallets: 4,
-      failedWallets: 2,
-      remainingToday: 8,
-      estimatedCyclesLeft: 53,
-    }),
-    [sessionStatus]
-  );
+      () => ({
+        tokenName: "BOTHEAD",
+        tokenAddress: "PASTE_FULL_TOKEN_ADDRESS_HERE",
+        geckoMode: "tokens" as const,
+        completedCycles: 128,
+        cycleStatus: sessionStatus,
+        perBuyRate: "0.15 SOL",
+        dailyUsed: 12,
+        dailyLimit: 20,
+        activeWallets: 18,
+        totalWallets: 24,
+        buyCycles: 64,
+        sellCycles: 64,
+        maxCycles: 200,
+        idleWallets: 4,
+        failedWallets: 2,
+        remainingToday: 8,
+        estimatedCyclesLeft: 53,
+      }),
+      [sessionStatus]
+    );
 
   const [pendingPurchase, setPendingPurchase] = useState<null | {
   tierKey: string;
@@ -268,24 +268,40 @@ useEffect(() => {
           </div>
 
           <SectionCard
-              title="Token Chart"
-              description="Live TradingView chart for the active session token pair."
-            >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-black">Active chart</p>
-                  <p className="mt-1 text-sm text-black/55">
-                    Monitor token price action without leaving the dashboard.
-                  </p>
-                </div>
-
-                <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
-                  {summary.chartSymbol}
-                </span>
+            title="Token Chart"
+            description="Live GeckoTerminal chart for the active Solana token."
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-black">Active chart</p>
+                <p className="mt-1 text-sm text-black/55">
+                  Monitor token price action without leaving the dashboard.
+                </p>
               </div>
 
-              <TradingViewChart symbol={summary.chartSymbol} height={560} />
-            </SectionCard>
+              <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
+                Solana token
+              </span>
+            </div>
+
+            {summary.tokenAddress ? (
+              <GeckoTerminalChart
+                mode={summary.geckoMode}
+                address={summary.tokenAddress}
+                height={560}
+                chartType="price"
+                resolution="15m"
+                lightChart={true}
+                showInfo={false}
+                showSwaps={false}
+                bgColor="ffffff"
+              />
+            ) : (
+              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-sm text-black/55">
+                No Solana token configured yet.
+              </div>
+            )}
+          </SectionCard>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <SectionCard
