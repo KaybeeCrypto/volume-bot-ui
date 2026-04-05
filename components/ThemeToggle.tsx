@@ -14,13 +14,12 @@ export default function ThemeToggle() {
       disabled={!mounted}
       aria-label="Toggle theme"
       aria-pressed={isDark}
-      className="inline-flex items-center gap-3 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60"
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="inline-flex items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span
         className={`relative flex h-7 w-14 items-center rounded-full border-2 transition-all ${
-          isDark
-            ? "border-white bg-white/10"
-            : "border-black bg-white"
+          isDark ? "border-white bg-white/10" : "border-black bg-white"
         }`}
       >
         <span
@@ -33,14 +32,6 @@ export default function ThemeToggle() {
           {isDark ? <MoonIcon /> : <SunIcon />}
         </span>
       </span>
-
-      <span
-        className={`text-sm font-semibold ${
-          isDark ? "text-white" : "text-black"
-        }`}
-      >
-        Theme: {mounted ? (isDark ? "Dark" : "Light") : "Light"}
-      </span>
     </button>
   );
 }
@@ -49,7 +40,7 @@ function SunIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="h-4 w-4"
+      className="h-3 w-3"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -58,14 +49,14 @@ function SunIcon() {
       aria-hidden="true"
     >
       <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />
-      <path d="M12 2v2.5" />
-      <path d="M12 19.5V22" />
-      <path d="M2 12h2.5" />
-      <path d="M19.5 12H22" />
-      <path d="M4.9 4.9l1.8 1.8" />
-      <path d="M17.3 17.3l1.8 1.8" />
-      <path d="M19.1 4.9l-1.8 1.8" />
-      <path d="M6.7 17.3l-1.8 1.8" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="M5 5l1.5 1.5" />
+      <path d="M17.5 17.5L19 19" />
+      <path d="M19 5l-1.5 1.5" />
+      <path d="M6.5 17.5L5 19" />
     </svg>
   );
 }
@@ -74,11 +65,11 @@ function MoonIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="h-4 w-4"
+      className="h-3 w-3"
       fill="currentColor"
       aria-hidden="true"
     >
-      <path d="M14.5 2.5c-1 1.2-1.6 2.8-1.6 4.5 0 4.1 3.4 7.5 7.5 7.5.4 0 .8 0 1.2-.1-1.2 4.2-5 7.1-9.5 7.1-5.5 0-10-4.5-10-10 0-4.9 3.5-9 8.2-9.9.3-.1.6-.1.8-.1 1 0 2.3.3 3.4 1Z" />
+      <path d="M15.5 3.5A8.5 8.5 0 1 0 20.5 18a7.5 7.5 0 1 1-5-14.5Z" />
     </svg>
   );
 }
