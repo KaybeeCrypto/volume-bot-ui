@@ -12,83 +12,122 @@ import GeckoTerminalChart from "@/components/GeckoTerminalChart";
 import { useWallet } from "@solana/wallet-adapter-react";
 
 
-export default function VolumeBotDashboardPage() {
-  const router = useRouter();
-  const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { session, loading: sessionLoading, refreshSession } = useAuthSession();
-  const { disconnect, select } = useWallet();
-  const { handleLogout } = useLogout({
-      disconnectWallet: async () => {
+    type DashboardSummary = {
+      tokenName: string;
+      tokenAddress: string;
+      tokenAddressDisplay: string;
+      geckoMode: "tokens" | "pools";
+      completedCycles: number;
+      cycleStatus: "Running" | "Paused" | "Stopped";
+      perBuyRate: string;
+      dailyUsed: number;
+      dailyLimit: number;
+      activeWallets: number;
+      totalWallets: number;
+      buyCycles: number;
+      sellCycles: number;
+      maxCycles: number;
+      idleWallets: number;
+      failedWallets: number;
+      remainingToday: number;
+      estimatedCyclesLeft: number;
+    };
+
+    export default function VolumeBotDashboardPage() {
+      const router = useRouter();
+
+      const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
+      const [menuOpen, setMenuOpen] = useState(false);
+
+      /* ✅ Token config state */
+      const [tokenAddressInput, setTokenAddressInput] = useState("");
+      const [configuredTokenAddress, setConfiguredTokenAddress] = useState("");
+
+      const { session, loading: sessionLoading, refreshSession } = useAuthSession();
+      const { disconnect, select } = useWallet();
+
+      const { handleLogout } = useLogout({
+        disconnectWallet: async () => {
+          try {
+            await disconnect();
+          } catch {}
+
+          try {
+            select(null);
+          } catch {}
+
+          try {
+            localStorage.removeItem("walletName");
+          } catch {}
+        },
+        onLoggedOut: async () => {
+          await refreshSession();
+          setMenuOpen(false);
+        },
+      });
+
+      /* ✅ Load saved token */
+      useEffect(() => {
         try {
-          await disconnect();
-        } catch {
-          // ignore disconnect errors
-        }
+          const saved = localStorage.getItem("pmpr_chart_token_address");
+          if (!saved) return;
 
-        try {
-          select(null);
-        } catch {
-          // ignore adapter reset errors
-        }
+          setConfiguredTokenAddress(saved);
+          setTokenAddressInput(saved);
+        } catch {}
+      }, []);
 
-        try {
-          localStorage.removeItem("walletName");
-        } catch {
-          // ignore storage errors
-        }
-      },
-      onLoggedOut: async () => {
-        await refreshSession();
-        setMenuOpen(false);
-      },
-    });
+      useBodyScrollLock(menuOpen);
+      useRequireSession(sessionLoading, session);
 
-  useBodyScrollLock(menuOpen);
-  useRequireSession(sessionLoading, session);
+      /* ✅ Typed summary (fixes geckoMode error) */
+      const summary = useMemo<DashboardSummary>(
+        () => ({
+          tokenName: "BOTHEAD",
+          tokenAddress: configuredTokenAddress,
+          tokenAddressDisplay: configuredTokenAddress
+            ? `${configuredTokenAddress.slice(0, 4)}...${configuredTokenAddress.slice(-4)}`
+            : "Not configured",
 
-  const summary = useMemo(
-      () => ({
-        tokenName: "BOTHEAD",
-        tokenAddress: "PASTE_FULL_TOKEN_ADDRESS_HERE",
-        geckoMode: "tokens" as const,
-        completedCycles: 128,
-        cycleStatus: sessionStatus,
-        perBuyRate: "0.15 SOL",
-        dailyUsed: 12,
-        dailyLimit: 20,
-        activeWallets: 18,
-        totalWallets: 24,
-        buyCycles: 64,
-        sellCycles: 64,
-        maxCycles: 200,
-        idleWallets: 4,
-        failedWallets: 2,
-        remainingToday: 8,
-        estimatedCyclesLeft: 53,
-      }),
-      [sessionStatus]
-    );
+          geckoMode: "tokens",
+
+          completedCycles: 128,
+          cycleStatus: sessionStatus,
+          perBuyRate: "0.15 SOL",
+          dailyUsed: 12,
+          dailyLimit: 20,
+          activeWallets: 18,
+          totalWallets: 24,
+          buyCycles: 64,
+          sellCycles: 64,
+          maxCycles: 200,
+          idleWallets: 4,
+          failedWallets: 2,
+          remainingToday: 8,
+          estimatedCyclesLeft: 53,
+        }),
+        [sessionStatus, configuredTokenAddress]
+      );
 
   const [pendingPurchase, setPendingPurchase] = useState<null | {
-  tierKey: string;
-  tierName: string;
-  priceSol: string;
-  purchasedAt: number;
-  setupRequired: boolean;
-}>(null);
+    tierKey: string;
+    tierName: string;
+    priceSol: string;
+    purchasedAt: number;
+    setupRequired: boolean;
+  }>(null);
 
-useEffect(() => {
-  try {
-    const raw = localStorage.getItem("pmpr_pending_purchase");
-    if (!raw) return;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("pmpr_pending_purchase");
+      if (!raw) return;
 
-    const parsed = JSON.parse(raw);
-    setPendingPurchase(parsed);
-  } catch {
-    setPendingPurchase(null);
-  }
-}, []);
+      const parsed = JSON.parse(raw);
+      setPendingPurchase(parsed);
+    } catch {
+      setPendingPurchase(null);
+    }
+  }, []);
 
   if (sessionLoading || !session) {
     return (
@@ -216,6 +255,7 @@ useEffect(() => {
           </div>
         </section>
       )}
+
       <section className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8 lg:py-14">
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -252,7 +292,7 @@ useEffect(() => {
           </div>
 
           <div id="overview" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <KpiCard label="Token in Session" value={summary.tokenName} subvalue={summary.tokenAddress} />
+            <KpiCard label="Token in Session" value={summary.tokenName} subvalue={summary.tokenAddressDisplay} />
             <KpiCard label="Buy / Sell Cycles" value={String(summary.completedCycles)} subvalue={summary.cycleStatus} />
             <KpiCard label="Per Buy Rate" value={summary.perBuyRate} subvalue="Current execution size" />
             <KpiCard
@@ -280,7 +320,7 @@ useEffect(() => {
               </div>
 
               <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
-                Solana token
+                {summary.geckoMode === "pools" ? "Solana pool" : "Solana token"}
               </span>
             </div>
 
@@ -309,9 +349,53 @@ useEffect(() => {
               title="Session / Bot Config"
               description="Core runtime settings for the active token session."
             >
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="text"
+                  value={tokenAddressInput}
+                  onChange={(e) => setTokenAddressInput(e.target.value)}
+                  placeholder="Enter Solana token address"
+                  className="flex-1 rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black"
+                />
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextAddress = tokenAddressInput.trim();
+                      setConfiguredTokenAddress(nextAddress);
+
+                      try {
+                        localStorage.setItem("pmpr_chart_token_address", nextAddress);
+                      } catch {
+                        // ignore storage errors
+                      }
+                    }}
+                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+                  >
+                    Save Token
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfiguredTokenAddress("");
+                      setTokenAddressInput("");
+
+                      try {
+                        localStorage.removeItem("pmpr_chart_token_address");
+                      } catch {
+                        // ignore storage errors
+                      }
+                    }}
+                    className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <InfoRow label="Token Used in Session" value={summary.tokenName} />
-                <InfoRow label="Token Address" value={summary.tokenAddress} />
+                <InfoRow label="Token Address" value={summary.tokenAddressDisplay} />
                 <InfoRow label="Session Status" value={summary.cycleStatus} />
                 <InfoRow label="Per Buy Rate" value={summary.perBuyRate} />
                 <InfoRow label="Daily Limit" value={`${summary.dailyLimit} SOL`} />
