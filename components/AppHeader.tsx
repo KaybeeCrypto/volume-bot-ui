@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import SessionActionButton from "@/components/SessionActionButton";
-import ThemeToggle from "@/components/ThemeToggle";
 
 type SessionLike = {
   address: string;
@@ -52,9 +51,7 @@ export default function AppHeader({
         />
       </button>
 
-      <div className="ml-auto flex items-center gap-3">
-        <ThemeToggle />
-
+      <div className="ml-auto flex items-center gap-2">
         <SessionActionButton
           sessionLoading={sessionLoading}
           session={session}
