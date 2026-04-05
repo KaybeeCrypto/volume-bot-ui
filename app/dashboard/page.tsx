@@ -208,6 +208,22 @@ export default function VolumeBotDashboardPage() {
     }
   }
 
+  function getSessionHelperText() {
+    if (!summary.tokenAddress) {
+      return "Enter a Solana token address to configure the session and load the chart.";
+    }
+
+    if (summary.cycleStatus === "Running") {
+      return `Session is live for ${summary.tokenName}. Monitor wallet flow and volume usage below.`;
+    }
+
+    if (summary.cycleStatus === "Paused") {
+      return `Session is paused for ${summary.tokenName}. Resume when you want execution to continue.`;
+    }
+
+    return `Session is configured for ${summary.tokenName} and ready to start.`;
+  }
+
   if (sessionLoading || !session) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white text-black">
@@ -337,7 +353,7 @@ export default function VolumeBotDashboardPage() {
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8 lg:py-14">
         <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             <div>
               <p className="mb-3 inline-flex rounded-full border border-black/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-black/55">
                 Live session overview
@@ -347,11 +363,18 @@ export default function VolumeBotDashboardPage() {
                 Monitor current token session, wallet participation, buy and sell cycle flow, and daily usage limits from one control panel.
               </p>
             </div>
+
+            <div className="grid grid-cols-1 gap-3 rounded-[28px] border border-black/10 bg-black/[0.02] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.03)] sm:grid-cols-2 xl:grid-cols-4">
+              <TopSummaryPill label="Session" value={<StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />} />
+              <TopSummaryPill label="Current Token" value={summary.tokenName} />
+              <TopSummaryPill label="Active Wallets" value={`${summary.activeWallets} / ${summary.totalWallets}`} />
+              <TopSummaryPill label="Remaining Today" value={`${summary.remainingToday} SOL`} />
+            </div>
           </div>
 
           <div id="overview" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <KpiCard label="Token in Session" value={summary.tokenName} subvalue={summary.tokenAddressDisplay} />
-            <KpiCard label="Buy / Sell Cycles" value={String(summary.completedCycles)} subvalue={summary.cycleStatus} />
+            <KpiCard label="Completed Cycles" value={String(summary.completedCycles)} subvalue={summary.cycleStatus} />
             <KpiCard label="Per Buy Rate" value={summary.perBuyRate} subvalue="Current execution size" />
             <KpiCard
               label="Daily Limit"
@@ -365,21 +388,25 @@ export default function VolumeBotDashboardPage() {
             />
           </div>
 
-          <SectionCard
-            title="Token Chart"
-            description="Live GeckoTerminal chart for the active Solana token."
-          >
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-7">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="text-sm font-medium text-black">Active chart</p>
-                <p className="mt-1 text-sm text-black/55">
-                  Monitor token price action without leaving the dashboard.
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-xl font-semibold tracking-tight text-black">Token Chart</h2>
+                  <StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />
+                </div>
+                <p className="mt-2 text-sm leading-6 text-black/58">
+                  {summary.tokenAddress
+                    ? `Tracking ${summary.tokenName} (${summary.tokenAddressDisplay}) in the current session.`
+                    : "Live GeckoTerminal chart for the active Solana token."}
                 </p>
               </div>
 
-              <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
-                {summary.geckoMode === "pools" ? "Solana pool" : "Solana token"}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
+                  {summary.geckoMode === "pools" ? "Solana pool" : "Solana token"}
+                </span>
+              </div>
             </div>
 
             {summary.tokenAddress ? (
@@ -395,11 +422,11 @@ export default function VolumeBotDashboardPage() {
                 bgColor="ffffff"
               />
             ) : (
-              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-sm text-black/55">
-                No Solana token configured yet.
+              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55">
+                No Solana token configured yet. Enter a token address in Session / Bot Config to load the chart.
               </div>
             )}
-          </SectionCard>
+          </section>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <SectionCard
@@ -407,42 +434,59 @@ export default function VolumeBotDashboardPage() {
               title="Session / Bot Config"
               description="Core runtime settings for the active token session."
             >
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-                <input
-                  type="text"
-                  value={tokenAddressInput}
-                  onChange={(e) => setTokenAddressInput(e.target.value)}
-                  placeholder="Enter Solana token address"
-                  className="flex-1 rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black"
-                />
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSaveToken}
-                    disabled={tokenLookupLoading}
-                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {tokenLookupLoading ? "Saving..." : "Save Token"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearToken}
-                    className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
-                  >
-                    Clear
-                  </button>
+              <div className="mb-6 rounded-2xl border border-black/10 bg-black/[0.02] p-4">
+                <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45">
+                  Token configuration
+                </p>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    value={tokenAddressInput}
+                    onChange={(e) => setTokenAddressInput(e.target.value)}
+                    placeholder="Enter Solana token address"
+                    className="flex-1 rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveToken}
+                      disabled={tokenLookupLoading}
+                      className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {tokenLookupLoading ? "Saving..." : "Save Token"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearToken}
+                      className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-black/60">
+                  <span>
+                    Current token:{" "}
+                    <span className="font-medium text-black">{summary.tokenName}</span>
+                  </span>
+                  <span>
+                    Address:{" "}
+                    <span className="font-medium text-black">{summary.tokenAddressDisplay}</span>
+                  </span>
+                </div>
+
+                {tokenLookupLoading && (
+                  <p className="mt-3 text-sm text-black/55">Fetching token info...</p>
+                )}
+
+                {tokenLookupError && (
+                  <p className="mt-3 text-sm text-red-600">{tokenLookupError}</p>
+                )}
               </div>
 
-              {tokenLookupLoading && (
-                <p className="mb-4 text-sm text-black/55">Fetching token info...</p>
-              )}
-
-              {tokenLookupError && (
-                <p className="mb-4 text-sm text-red-600">{tokenLookupError}</p>
-              )}
-
-              <div className="mb-6">
+              <div className="mb-6 rounded-2xl border border-black/10 bg-black/[0.02] p-4">
                 <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45">
                   Session controls
                 </p>
@@ -450,21 +494,24 @@ export default function VolumeBotDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setSessionStatus("Running")}
-                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+                    disabled={sessionStatus === "Running"}
+                    className={getSessionControlButtonClass(sessionStatus === "Running", "primary")}
                   >
                     Start Bot
                   </button>
                   <button
                     type="button"
                     onClick={() => setSessionStatus("Paused")}
-                    className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+                    disabled={sessionStatus === "Paused"}
+                    className={getSessionControlButtonClass(sessionStatus === "Paused", "secondary")}
                   >
                     Pause
                   </button>
                   <button
                     type="button"
                     onClick={() => setSessionStatus("Stopped")}
-                    className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black"
+                    disabled={sessionStatus === "Stopped"}
+                    className={getSessionControlButtonClass(sessionStatus === "Stopped", "muted")}
                   >
                     Stop
                   </button>
@@ -474,7 +521,10 @@ export default function VolumeBotDashboardPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <InfoRow label="Token Used in Session" value={summary.tokenName} />
                 <InfoRow label="Token Address" value={summary.tokenAddressDisplay} />
-                <InfoRow label="Session Status" value={summary.cycleStatus} />
+                <InfoRow
+                  label="Session Status"
+                  value={<StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />}
+                />
                 <InfoRow label="Per Buy Rate" value={summary.perBuyRate} />
                 <InfoRow label="Daily Limit" value={`${summary.dailyLimit} SOL`} />
                 <InfoRow label="Max Cycles" value={String(summary.maxCycles)} />
@@ -482,9 +532,7 @@ export default function VolumeBotDashboardPage() {
 
               <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.025] p-4">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45">Session note</p>
-                <p className="mt-2 text-sm leading-6 text-black/65">
-                  This panel is set up as the visual home for your active Solana volume bot session. Later you can replace these display rows with editable inputs tied to backend config values.
-                </p>
+                <p className="mt-2 text-sm leading-6 text-black/65">{getSessionHelperText()}</p>
               </div>
             </SectionCard>
 
@@ -508,12 +556,21 @@ export default function VolumeBotDashboardPage() {
                 </div>
                 <div className="divide-y divide-black/10">
                   {walletRows.map((wallet) => (
-                    <div key={wallet.address} className="grid grid-cols-4 px-4 py-3 text-sm text-black/75">
+                    <div key={wallet.address} className="grid grid-cols-4 px-4 py-3 text-sm text-black/75 transition hover:bg-black/[0.02]">
                       <span className="font-medium text-black">{wallet.address}</span>
                       <span>
-                        <StatusBadge label={wallet.status} />
+                        <StatusBadge
+                          label={wallet.status}
+                          variant={
+                            wallet.status === "Active"
+                              ? "Active"
+                              : wallet.status === "Idle"
+                                ? "Idle"
+                                : "Failed"
+                          }
+                        />
                       </span>
-                      <span>{wallet.lastAction}</span>
+                      <span className="font-medium text-black">{wallet.lastAction}</span>
                       <span>{wallet.lastTrade}</span>
                     </div>
                   ))}
@@ -569,7 +626,10 @@ export default function VolumeBotDashboardPage() {
                     <p className="text-sm font-medium">Usage condition</p>
                     <p className="mt-1 text-sm text-black/55">The dashboard keeps the most important throughput numbers visible at all times.</p>
                   </div>
-                  <StatusBadge label={summary.dailyUsed >= summary.dailyLimit ? "Limit Reached" : "Within Limit"} />
+                  <StatusBadge
+                    label={summary.dailyUsed >= summary.dailyLimit ? "Limit Reached" : "Within Limit"}
+                    variant={summary.dailyUsed >= summary.dailyLimit ? "Limit Reached" : "Within Limit"}
+                  />
                 </div>
               </div>
             </SectionCard>
@@ -590,14 +650,22 @@ export default function VolumeBotDashboardPage() {
                 </thead>
                 <tbody>
                   {recentActivity.map((item, index) => (
-                    <tr key={`${item.wallet}-${index}`} className="text-sm text-black/75">
+                    <tr
+                      key={`${item.wallet}-${index}`}
+                      className={`text-sm text-black/75 transition hover:bg-black/[0.02] ${
+                        index % 2 === 0 ? "bg-white" : "bg-black/[0.01]"
+                      }`}
+                    >
                       <td className="border-t border-black/10 px-4 py-4">{item.time}</td>
                       <td className="border-t border-black/10 px-4 py-4 font-medium text-black">{item.wallet}</td>
-                      <td className="border-t border-black/10 px-4 py-4">{item.action}</td>
+                      <td className="border-t border-black/10 px-4 py-4 font-medium text-black">{item.action}</td>
                       <td className="border-t border-black/10 px-4 py-4">{item.amount}</td>
                       <td className="border-t border-black/10 px-4 py-4">{item.token}</td>
                       <td className="border-t border-black/10 px-4 py-4">
-                        <StatusBadge label={item.status} />
+                        <StatusBadge
+                          label={item.status}
+                          variant={item.status === "Limited" ? "Limited" : "Success"}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -608,6 +676,20 @@ export default function VolumeBotDashboardPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+type TopSummaryPillProps = {
+  label: string;
+  value: React.ReactNode;
+};
+
+function TopSummaryPill({ label, value }: TopSummaryPillProps) {
+  return (
+    <div className="rounded-2xl border border-black/10 bg-white px-4 py-3">
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45">{label}</p>
+      <div className="mt-2 text-sm font-semibold text-black">{value}</div>
+    </div>
   );
 }
 
@@ -651,14 +733,14 @@ function SectionCard({ title, description, children, id }: SectionCardProps) {
 
 type InfoRowProps = {
   label: string;
-  value: string;
+  value: React.ReactNode;
 };
 
 function InfoRow({ label, value }: InfoRowProps) {
   return (
     <div className="rounded-2xl border border-black/10 bg-white p-4">
       <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45">{label}</p>
-      <p className="mt-3 text-base font-semibold text-black">{value}</p>
+      <div className="mt-3 text-base font-semibold text-black">{value}</div>
     </div>
   );
 }
@@ -697,14 +779,58 @@ function ProgressBlock({ label, value, percent }: ProgressBlockProps) {
   );
 }
 
+type StatusBadgeVariant =
+  | "Running"
+  | "Paused"
+  | "Stopped"
+  | "Success"
+  | "Limited"
+  | "Active"
+  | "Idle"
+  | "Failed"
+  | "Within Limit"
+  | "Limit Reached";
+
 type StatusBadgeProps = {
   label: string;
+  variant?: StatusBadgeVariant;
 };
 
-function StatusBadge({ label }: StatusBadgeProps) {
+function StatusBadge({ label, variant }: StatusBadgeProps) {
+  const resolvedVariant = variant || "Idle";
+
+  const styles: Record<StatusBadgeVariant, string> = {
+    Running: "border-black bg-black text-white",
+    Paused: "border-black/20 bg-black/[0.08] text-black",
+    Stopped: "border-black/10 bg-white text-black/70",
+    Success: "border-black bg-black/[0.9] text-white",
+    Limited: "border-black/15 bg-black/[0.06] text-black",
+    Active: "border-black bg-black text-white",
+    Idle: "border-black/10 bg-black/[0.04] text-black/75",
+    Failed: "border-black/30 bg-black/[0.12] text-black",
+    "Within Limit": "border-black/10 bg-black/[0.04] text-black/75",
+    "Limit Reached": "border-black bg-black text-white",
+  };
+
   return (
-    <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75">
+    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${styles[resolvedVariant]}`}>
       {label}
     </span>
   );
+}
+
+function getSessionControlButtonClass(isActive: boolean, tone: "primary" | "secondary" | "muted") {
+  if (isActive) {
+    return "rounded-2xl border border-black bg-black px-5 py-3 text-sm font-medium text-white opacity-70 cursor-not-allowed";
+  }
+
+  if (tone === "primary") {
+    return "rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90";
+  }
+
+  if (tone === "secondary") {
+    return "rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white";
+  }
+
+  return "rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/70 transition hover:border-black hover:text-black";
 }
