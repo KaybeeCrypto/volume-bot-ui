@@ -417,7 +417,7 @@ export default function VolumeBotDashboardPage() {
                 lightChart={theme === "light"}
                 showInfo={false}
                 showSwaps={false}
-                bgColor={theme === "light" ? "ffffff" : "020617"}
+                bgColor={theme === "light" ? "ffffff" : "111827"}
               />
             ) : (
               <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55 dark:border-white/15 dark:text-white/55">
