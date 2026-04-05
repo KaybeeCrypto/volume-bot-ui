@@ -152,11 +152,11 @@ export default function SessionActionButton({
     <button
       type="button"
       onClick={onConnect}
-      className={`group inline-flex h-11 items-center justify-center rounded-full border border-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 p-[1px] shadow-[0_0_0_rgba(0,0,0,0)] transition duration-200 hover:shadow-[0_0_18px_rgba(59,130,246,0.22)] focus:outline-none focus:ring-2 focus:ring-cyan-300/50 ${
+      className={`group inline-flex h-9 sm:h-11 items-center justify-center rounded-full border border-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 p-[1px] shadow-[0_0_0_rgba(0,0,0,0)] transition duration-200 hover:shadow-[0_0_18px_rgba(59,130,246,0.22)] focus:outline-none focus:ring-2 focus:ring-cyan-300/50 ${
         fullWidth ? "w-full" : ""
       }`}
     >
-      <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-black px-3 sm:px-5 text-sm font-semibold text-white dark:bg-slate-950">
+      <span className="inline-flex h-9 sm:h-11 w-full items-center justify-center rounded-full bg-black px-2.5 sm:px-5 text-sm font-semibold text-white dark:bg-slate-950">
         {loggedOutLabel}
       </span>
     </button>
