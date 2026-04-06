@@ -292,9 +292,6 @@ export default function Home() {
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
               How It Works
             </p>
-            <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
-              Buy, validate, configure, pay, start
-            </h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-white/60">
               The flow is simple, but it is structured. Every session follows
               the same path so the process stays clear.
