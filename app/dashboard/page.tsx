@@ -396,31 +396,22 @@ export default function VolumeBotDashboardPage() {
             </p>
           </section>
 
-          <div id="overview" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <KpiCard
-              label="Token in Session"
-              value={summary.tokenName}
-              subvalue={summary.tokenAddressDisplay}
-            />
-            <KpiCard
-              label="Completed Cycles"
-              value={String(summary.completedCycles)}
-              subvalue={summary.cycleStatus}
-            />
-            <KpiCard
-              label="Per Buy Rate"
-              value={summary.perBuyRate}
-              subvalue="Current execution size"
-            />
-            <KpiCard
+          <div
+            id="overview"
+            className="flex flex-wrap gap-3 rounded-[24px] border border-black/10 bg-white px-4 py-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:border-white/10 dark:bg-slate-900"
+          >
+            <OverviewPill label="Token" value={summary.tokenName} />
+            <OverviewPill label="Address" value={summary.tokenAddressDisplay} />
+            <OverviewPill label="Cycles" value={String(summary.completedCycles)} />
+            <OverviewPill label="Status" value={summary.cycleStatus} />
+            <OverviewPill label="Buy Rate" value={summary.perBuyRate} />
+            <OverviewPill
               label="Daily Limit"
               value={`${summary.dailyUsed} / ${summary.dailyLimit} SOL`}
-              subvalue={`${Math.round(dailyUsagePercent)}% used today`}
             />
-            <KpiCard
-              label="Active Wallets"
-              value={String(summary.activeWallets)}
-              subvalue={`${summary.totalWallets} wallets loaded`}
+            <OverviewPill
+              label="Wallets"
+              value={`${summary.activeWallets} / ${summary.totalWallets}`}
             />
           </div>
 
@@ -431,7 +422,6 @@ export default function VolumeBotDashboardPage() {
                   <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">
                     Token Chart
                   </h2>
-                  <StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />
                 </div>
                 <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">
                   {summary.tokenAddress
@@ -466,11 +456,10 @@ export default function VolumeBotDashboardPage() {
             )}
           </section>
 
-          <SectionCard
+                    <SectionCard
             id="control"
             title="Control Section"
             description="Configure runtime behavior, execution limits, and live bot actions from one clean operator panel."
-            headerRight={<StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />}
           >
             <div className="space-y-6">
               <div className="rounded-[24px] border border-black/10 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.03]">
@@ -486,7 +475,9 @@ export default function VolumeBotDashboardPage() {
 
                   <div className="flex flex-wrap gap-2">
                     <UtilityPill label={`Token: ${summary.tokenName}`} />
-                    <UtilityPill label={`Wallets: ${summary.activeWallets}/${summary.totalWallets}`} />
+                    <UtilityPill
+                      label={`Wallets: ${summary.activeWallets}/${summary.totalWallets}`}
+                    />
                     <UtilityPill label={`Remaining: ${summary.remainingToday} SOL`} />
                   </div>
                 </div>
@@ -583,12 +574,16 @@ export default function VolumeBotDashboardPage() {
                   <ToggleButton
                     active={botConfig.randomizeAmounts}
                     label="Randomize Amounts"
-                    onClick={() => updateBotConfig("randomizeAmounts", !botConfig.randomizeAmounts)}
+                    onClick={() =>
+                      updateBotConfig("randomizeAmounts", !botConfig.randomizeAmounts)
+                    }
                   />
                   <ToggleButton
                     active={botConfig.autoStopOnLimit}
                     label="Auto-stop on Daily Limit"
-                    onClick={() => updateBotConfig("autoStopOnLimit", !botConfig.autoStopOnLimit)}
+                    onClick={() =>
+                      updateBotConfig("autoStopOnLimit", !botConfig.autoStopOnLimit)
+                    }
                   />
                 </div>
 
@@ -699,14 +694,18 @@ export default function VolumeBotDashboardPage() {
                   </button>
                 </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-4">
-                  <InlineStat label="Status" value={summary.cycleStatus} />
-                  <InlineStat label="Token" value={summary.tokenName} />
-                  <InlineStat
+                <div className="mt-5 flex flex-wrap gap-2.5">
+                  <RuntimeInfoPill label="Status" value={summary.cycleStatus} />
+                  <RuntimeInfoPill label="Token" value={summary.tokenName} />
+                  <RuntimeInfoPill
                     label="Wallets Active"
                     value={`${summary.activeWallets} / ${summary.totalWallets}`}
                   />
-                  <InlineStat label="Sell Rate" value={summary.perSellRate} />
+                  <RuntimeInfoPill label="Sell Rate" value={summary.perSellRate} />
+                  <RuntimeInfoPill
+                    label="Remaining Today"
+                    value={`${summary.remainingToday} SOL`}
+                  />
                 </div>
               </div>
 
@@ -837,23 +836,6 @@ export default function VolumeBotDashboardPage() {
   );
 }
 
-type KpiCardProps = {
-  label: string;
-  value: string;
-  subvalue: string;
-};
-
-function KpiCard({ label, value, subvalue }: KpiCardProps) {
-  return (
-    <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:border-white/10 dark:bg-slate-900">
-      <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45 dark:text-white/45">
-        {label}
-      </p>
-      <p className="mt-4 text-2xl font-semibold tracking-tight text-black dark:text-white">{value}</p>
-      <p className="mt-2 text-sm text-black/55 dark:text-white/55">{subvalue}</p>
-    </div>
-  );
-}
 
 type SectionCardProps = {
   title: string;
@@ -1027,17 +1009,35 @@ type SelectFieldProps = {
 function SelectField({ label, value, onChange, options, hint }: SelectFieldProps) {
   return (
     <Field label={label} hint={hint}>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black outline-none transition focus:border-black dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-white"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-12 w-full appearance-none rounded-2xl border border-black/10 bg-white px-4 pr-12 text-sm font-medium text-black outline-none transition focus:border-black focus:bg-white dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-white dark:focus:bg-slate-950"
+        >
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+
+        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-black/40 dark:text-white/40">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      </div>
     </Field>
   );
 }
@@ -1049,6 +1049,37 @@ type InputWithSuffixProps = {
   placeholder?: string;
 };
 
+type OverviewPillProps = {
+  label: string;
+  value: string;
+};
+
+function OverviewPill({ label, value }: OverviewPillProps) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-4 py-2.5 dark:border-white/10 dark:bg-white/[0.04]">
+      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+        {label}
+      </span>
+      <span className="text-sm font-semibold text-black dark:text-white">{value}</span>
+    </div>
+  );
+}
+
+type RuntimeInfoPillProps = {
+  label: string;
+  value: string;
+};
+
+function RuntimeInfoPill({ label, value }: RuntimeInfoPillProps) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-slate-950">
+      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+        {label}
+      </span>
+      <span className="text-sm font-semibold text-black dark:text-white">{value}</span>
+    </div>
+  );
+}
 function InputWithSuffix({ value, onChange, suffix, placeholder }: InputWithSuffixProps) {
   return (
     <div className="flex h-12 items-center rounded-2xl border border-black/10 bg-white px-4 dark:border-white/10 dark:bg-slate-950">
@@ -1098,22 +1129,6 @@ function UtilityPill({ label }: UtilityPillProps) {
     <span className="inline-flex rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium text-black/72 dark:border-white/10 dark:bg-slate-950 dark:text-white/72">
       {label}
     </span>
-  );
-}
-
-type InlineStatProps = {
-  label: string;
-  value: string;
-};
-
-function InlineStat({ label, value }: InlineStatProps) {
-  return (
-    <div className="rounded-2xl border border-black/10 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-950">
-      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
-        {label}
-      </p>
-      <p className="mt-2 text-sm font-semibold text-black dark:text-white">{value}</p>
-    </div>
   );
 }
 
