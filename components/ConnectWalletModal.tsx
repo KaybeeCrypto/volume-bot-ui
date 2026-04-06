@@ -69,7 +69,7 @@ export default function ConnectWalletModal({
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3">
           <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-cyan-500" />
           <p className="text-xs leading-5 text-gray-600">
-            Use a supported Solana wallet like Phantom or Solflare. Your wallet
+            Use a supported Solana wallet like Phantom, Solflare, Backpack, or Trust. Your wallet
             remains under your control during connection.
           </p>
         </div>

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { useWallet } from "@solana/wallet-adapter-react";
 
-type SupportedWalletName = "Phantom" | "Solflare";
+type SupportedWalletName = "Phantom" | "Solflare" | "Backpack" | "Trust";
 
 export default function WalletPicker() {
   const { wallets, wallet, connecting, select } = useWallet();
@@ -12,13 +12,22 @@ export default function WalletPicker() {
   const [error, setError] = useState("");
 
   const supportedWallets = useMemo(() => {
-    const names: SupportedWalletName[] = ["Phantom", "Solflare"];
+    const names: SupportedWalletName[] = [
+      "Phantom",
+      "Solflare",
+      "Backpack",
+      "Trust",
+    ];
 
     return names
       .map((name) =>
         wallets.find((walletEntry) => String(walletEntry.adapter.name) === name)
       )
-      .filter(Boolean);
+      .filter(
+        (
+          walletEntry
+        ): walletEntry is NonNullable<typeof walletEntry> => Boolean(walletEntry)
+      );
   }, [wallets]);
 
   const handleConnect = async (walletName: SupportedWalletName) => {
@@ -60,14 +69,15 @@ export default function WalletPicker() {
   return (
     <div className="flex w-full flex-col gap-3">
       {supportedWallets.map((walletEntry) => {
-        const walletName = String(walletEntry!.adapter.name) as SupportedWalletName;
+        const walletName = String(walletEntry.adapter.name) as SupportedWalletName;
         const isPending = pendingWallet === walletName || connecting;
 
         const installed =
-          walletEntry!.readyState === WalletReadyState.Installed ||
-          walletEntry!.readyState === WalletReadyState.Loadable;
+          walletEntry.readyState === WalletReadyState.Installed ||
+          walletEntry.readyState === WalletReadyState.Loadable;
 
-        const isPhantom = walletName === "Phantom";
+        const isPrimary =
+          walletName === "Phantom" || walletName === "Backpack";
 
         return (
           <button
@@ -76,19 +86,19 @@ export default function WalletPicker() {
             onClick={() => void handleConnect(walletName)}
             disabled={isPending}
             className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
-              isPhantom
+              isPrimary
                 ? "border-transparent bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_12px_30px_rgba(99,102,241,0.28)] hover:opacity-95"
                 : "border-gray-200 bg-white text-black hover:bg-gray-50"
-            } ${isPending ? "opacity-70 cursor-not-allowed" : ""}`}
+            } ${isPending ? "cursor-not-allowed opacity-70" : ""}`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl ${
-                  isPhantom ? "bg-white/12" : "bg-gray-100"
+                  isPrimary ? "bg-white/12" : "bg-gray-100"
                 }`}
               >
                 <img
-                  src={walletEntry!.adapter.icon}
+                  src={walletEntry.adapter.icon}
                   alt={`${walletName} logo`}
                   className="h-6 w-6 object-contain"
                 />
@@ -97,7 +107,7 @@ export default function WalletPicker() {
               <div>
                 <p
                   className={`text-sm font-semibold ${
-                    isPhantom ? "text-white" : "text-black"
+                    isPrimary ? "text-white" : "text-black"
                   }`}
                 >
                   {isPending
@@ -107,7 +117,7 @@ export default function WalletPicker() {
 
                 <p
                   className={`mt-1 text-xs ${
-                    isPhantom ? "text-white/70" : "text-gray-500"
+                    isPrimary ? "text-white/70" : "text-gray-500"
                   }`}
                 >
                   {installed ? "Detected in browser" : "Not detected"}
@@ -117,7 +127,7 @@ export default function WalletPicker() {
 
             <span
               className={`text-lg transition group-hover:translate-x-1 ${
-                isPhantom ? "text-white/70" : "text-gray-400"
+                isPrimary ? "text-white/70" : "text-gray-400"
               }`}
             >
               {isPending ? "…" : "→"}
