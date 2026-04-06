@@ -1,46 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthSession } from "@/hooks/useAuthSession";
-import { useLogout } from "@/hooks/useLogout";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
-import AppHeader from "@/components/AppHeader";
-import SideMenu from "@/components/SideMenu";
-import ConnectWalletModal from "@/components/ConnectWalletModal";
-import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { useWallet } from "@solana/wallet-adapter-react";
-import PurchaseTierModal from "@/components/PurchaseTierModal";
-import { TIERS, type TierConfig, type TierKey } from "@/lib/tiers";
+
+import AppHeader from "@/components/AppHeader";
+import ConnectWalletModal from "@/components/ConnectWalletModal";
 import DevDisclaimer from "@/components/DevDisclaimer";
+import SideMenu from "@/components/SideMenu";
+
+import { useAuthSession } from "@/hooks/useAuthSession";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useLogout } from "@/hooks/useLogout";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
+
+import { TIERS } from "@/lib/tiers";
+import type { TierConfig } from "@/types/tier";
 
 export default function Home() {
   const router = useRouter();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [purchaseOpen, setPurchaseOpen] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<TierConfig | null>(null);
 
-  const formatPrice = (price: string) => {
-    return price === "FREE" ? "FREE" : `${price} SOL`;
-  };
-
-  const handleScrollToPricing = () => {
-    setMenuOpen(false);
-
-    const pricingSection = document.getElementById("pricing");
-
-    if (pricingSection) {
-      const y = pricingSection.getBoundingClientRect().top + window.scrollY - 90;
-
-      window.scrollTo({
-        top: y,
-        behavior: "smooth",
-      });
-    }
-  };
-
-  const postLoginActionRef = useRef<"dashboard" | "purchase" | null>(null);
+  const postLoginActionRef = useRef<"dashboard" | null>(null);
 
   const { disconnect, select } = useWallet();
   const {
@@ -48,6 +31,8 @@ export default function Home() {
     loading: sessionLoading,
     refreshSession,
   } = useAuthSession();
+
+  useBodyScrollLock(menuOpen || loginOpen);
 
   const { handleLogout } = useLogout({
     disconnectWallet: async () => {
@@ -66,13 +51,10 @@ export default function Home() {
     onLoggedOut: async () => {
       await refreshSession();
       setLoginOpen(false);
-      setPurchaseOpen(false);
       setMenuOpen(false);
       postLoginActionRef.current = null;
     },
   });
-
-  useBodyScrollLock(menuOpen || loginOpen || purchaseOpen);
 
   const { authLoading, authError } = useWalletAuth({
     enabled: loginOpen,
@@ -90,68 +72,93 @@ export default function Home() {
       postLoginActionRef.current = null;
       setLoginOpen(false);
       router.replace("/dashboard");
-      return;
     }
+  }, [session, router]);
 
-    if (postLoginActionRef.current === "purchase" && selectedTier) {
-      postLoginActionRef.current = null;
-      setLoginOpen(false);
-      setPurchaseOpen(true);
-    }
-  }, [session, selectedTier, router]);
+  const navItems = useMemo(
+    () => [
+      { label: "Home", href: "/" },
+      { label: "Buy Session", href: "/buy" },
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Sessions", href: "/sessions" },
+      { label: "Referrals", href: "/referrals" },
+      { label: "Settings", href: "/settings" },
+    ],
+    []
+  );
 
-  const handleHeaderLogoClick = () => {
+  function handleHeaderLogoClick() {
     if (window.location.pathname === "/") {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
     router.push("/");
-  };
+  }
 
-  const openConnectForDashboard = () => {
+  function openConnectForDashboard() {
     postLoginActionRef.current = "dashboard";
     setLoginOpen(true);
-  };
+  }
 
-  const openPurchaseFlow = (tierKey: TierKey) => {
-    const tier = TIERS[tierKey];
-    setSelectedTier(tier);
+  function scrollToSection(id: string, offset = 90) {
+    setMenuOpen(false);
 
-    if (!session) {
-      postLoginActionRef.current = "purchase";
-      setLoginOpen(true);
+    const section = document.getElementById(id);
+    if (!section) return;
+
+    const y = section.getBoundingClientRect().top + window.scrollY - offset;
+
+    window.scrollTo({
+      top: y,
+      behavior: "smooth",
+    });
+  }
+
+  function handleBuyNow(tier: TierConfig) {
+    if (tier.managed) {
+      scrollToSection("support");
       return;
     }
 
-    setPurchaseOpen(true);
-  };
+    router.push(`/buy?tier=${tier.key}`);
+  }
 
-  const handlePaymentComplete = (tier: TierConfig) => {
-    try {
-      localStorage.setItem(
-        "pmpr_pending_purchase",
-        JSON.stringify({
-          tierKey: tier.key,
-          tierName: tier.name,
-          priceSol: tier.priceSol,
-          purchasedAt: Date.now(),
-          setupRequired: true,
-        })
-      );
-    } catch {
-      // ignore storage errors
+  function formatDuration(hours: number) {
+    if (hours % 24 === 0) {
+      const days = hours / 24;
+      return `${days}d`;
     }
 
-    setPurchaseOpen(false);
-    router.push("/dashboard");
-  };
+    return `${hours}h`;
+  }
 
-  const navItems = [
-    { label: "Home", href: "/" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Referrals", href: "/referrals" },
-    { label: "Settings", href: "/settings" },
+  const faqItems = [
+    {
+      question: "My payment was sent but not confirmed.",
+      answer:
+        "Wait up to 5 minutes for blockchain confirmation. If it still is not confirmed after 10 minutes, contact support with your transaction hash.",
+    },
+    {
+      question: "Can I run two sessions on the same token?",
+      answer:
+        "One session per token per account. Contact support if you need a custom multi-session arrangement.",
+    },
+    {
+      question: "What happens if the bot crashes?",
+      answer:
+        "The system automatically attempts up to 3 restarts. If it still fails, you are notified and can contact support.",
+    },
+    {
+      question: "Can I use this on pump.fun tokens?",
+      answer:
+        "Yes. The system can detect bonding-curve or DEX routing and handle the session accordingly.",
+    },
+    {
+      question: "What happens when the session ends?",
+      answer:
+        "Trading stops, remaining SOL is swept back to your return wallet, and you receive a completion update.",
+    },
   ];
 
   return (
@@ -168,8 +175,8 @@ export default function Home() {
           openConnectForDashboard();
         }}
         showPrimaryButton
-        primaryButtonLabel="Buy"
-        onPrimaryButtonClick={handleScrollToPricing}
+        primaryButtonLabel="Buy Session"
+        onPrimaryButtonClick={() => scrollToSection("pricing")}
       />
 
       <ConnectWalletModal
@@ -182,14 +189,7 @@ export default function Home() {
         authError={authError}
       />
 
-      <PurchaseTierModal
-        open={purchaseOpen}
-        tier={selectedTier}
-        onClose={() => setPurchaseOpen(false)}
-        onPaymentComplete={handlePaymentComplete}
-      />
-
-            <AppHeader
+      <AppHeader
         onMenuOpen={() => setMenuOpen(true)}
         onLogoClick={handleHeaderLogoClick}
         sessionLoading={sessionLoading}
@@ -200,268 +200,256 @@ export default function Home() {
 
       <DevDisclaimer />
 
-      <section className="px-6 py-28">
-        <div className="mx-auto flex max-w-7xl flex-col-reverse items-center gap-10 md:flex-row md:justify-between">
-          <div className="max-w-3xl text-center md:text-left">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
-              Solana Volume Automation
+      <section className="px-6 pb-20 pt-24 md:pb-24 md:pt-28">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-[1.15fr_0.85fr]">
+          <div className="text-center md:text-left">
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
+              Solana Volume Sessions
             </p>
 
-            <h1 className="text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
-              Generate Volume. <br />
-              Look Like Smart Money.
+            <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+              Launch and manage Solana volume sessions from one place.
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-8 text-gray-500 dark:text-white/60">
-              Automated Solana volume generation designed to simulate real market
-              activity and help projects create stronger momentum from day one.
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600 md:mx-0 dark:text-white/65">
+              Volbot helps generate trading activity, wallet rotation, and
+              visibility signals across the tools traders already watch. Choose
+              a tier, validate your token, pay the exact amount, and start your
+              session.
             </p>
 
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
               <button
-                onClick={() => openPurchaseFlow("trial")}
-                className={`rounded-lg bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black ${
-                  session ? "px-10 sm:min-w-[220px]" : "px-6"
-                }`}
+                onClick={() => router.push("/buy")}
+                className="rounded-xl bg-black px-8 py-3.5 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
               >
-                Start Free Trial
+                Buy Session
               </button>
 
-              {!session && (
-                <button
-                  onClick={openConnectForDashboard}
-                  className="rounded-lg border border-black px-6 py-3 font-semibold transition hover:bg-gray-100 dark:border-white dark:hover:bg-white/10"
-                >
-                  Connect Wallet
-                </button>
-              )}
+              <button
+                onClick={() => scrollToSection("how-it-works")}
+                className="rounded-xl border border-black px-8 py-3.5 font-semibold transition hover:bg-gray-100 dark:border-white dark:hover:bg-white/10"
+              >
+                How It Works
+              </button>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500 md:justify-start dark:text-white/45">
+              <span>3-hour payment window</span>
+              <span>•</span>
+              <span>Return wallet support</span>
+              <span>•</span>
+              <span>Session tracking in dashboard</span>
             </div>
           </div>
 
-          <div className="flex w-full justify-center md:justify-end">
-            <div className="relative flex h-[360px] w-[360px] items-center justify-center md:h-[520px] md:w-[520px]">
+          <div className="flex justify-center md:justify-end">
+            <div className="relative flex h-[280px] w-[280px] items-center justify-center md:h-[430px] md:w-[430px]">
               <img
                 src="/logo_bothead.png"
-                alt="Bot logo"
-                className="relative z-10 w-[640px] max-w-none drop-shadow-[0_20px_60px_rgba(0,0,0,0.18)] md:w-[1500px]"
+                alt="Volbot"
+                className="w-[360px] max-w-none drop-shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:w-[560px]"
               />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="px-6 pb-12">
-        <div className="mx-auto grid max-w-7xl gap-4 rounded-2xl border border-gray-200 bg-white p-5 md:grid-cols-3 dark:border-white/10 dark:bg-slate-900">
-          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
-            <p className="text-sm font-semibold text-gray-400 dark:text-white/40">Pricing Edge</p>
-            <p className="mt-2 text-lg font-bold text-black dark:text-white">
-              71% cheaper per $100K volume
+      <section className="px-6 pb-16">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-slate-900">
+          <div className="text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gray-400 dark:text-white/40">
+              Visibility Targets
             </p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-white/60">vs Boost Legends</p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight md:text-3xl">
+              Built for the places traders actually look
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-gray-600 dark:text-white/60">
+              Volbot is designed to support visibility signals across the
+              platforms that shape early token attention.
+            </p>
           </div>
 
-          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
-            <p className="text-sm font-semibold text-gray-400 dark:text-white/40">
-              Built For Speed
-            </p>
-            <p className="mt-2 text-lg font-bold text-black dark:text-white">
-              Simple tier → pay → run flow
-            </p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-white/60">No unnecessary steps</p>
-          </div>
-
-          <div className="rounded-xl bg-gray-50 p-4 text-center md:text-left dark:bg-white/5">
-            <p className="text-sm font-semibold text-gray-400 dark:text-white/40">Included</p>
-            <p className="mt-2 text-lg font-bold text-black dark:text-white">
-              Reactions included
-            </p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-white/60">Clearer social proof</p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {["DexScreener", "GMGN", "Axiom", "Photon"].map((platform) => (
+              <div
+                key={platform}
+                className="rounded-2xl bg-gray-50 px-5 py-6 text-center text-lg font-semibold dark:bg-white/5"
+              >
+                {platform}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-slate-950 px-6 py-24 text-white">
+      <section
+        id="how-it-works"
+        className="bg-slate-950 px-6 py-24 text-white"
+      >
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
               How It Works
             </p>
             <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
-              Launch volume in three simple steps
+              Buy, validate, configure, pay, start
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-white/60">
-              A fast and simple process designed to get your session live
-              without unnecessary friction.
+              The flow is simple, but it is structured. Every session follows
+              the same path so the process stays clear.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-6 md:grid-cols-3">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-left shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15 text-lg font-bold text-cyan-300">
-                1
-              </div>
-              <h3 className="mt-6 text-2xl font-semibold">Pick a Tier</h3>
-              <p className="mt-4 leading-7 text-white/65">
-                Choose the package that matches your target volume, strategy,
-                and budget.
-              </p>
-            </div>
+          <div className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+            {[
+              {
+                number: "1",
+                title: "Choose your tier",
+                text: "Pick the package that matches your campaign size, duration, and wallet count.",
+              },
+              {
+                number: "2",
+                title: "Enter your token",
+                text: "Paste your contract address and let the system validate on-chain availability, liquidity, and tradeability.",
+              },
+              {
+                number: "3",
+                title: "Configure wallets",
+                text: "Set wallet activity details for the selected tier before creating the session order.",
+              },
+              {
+                number: "4",
+                title: "Set return wallet",
+                text: "Choose the wallet that receives unused SOL back when the session ends or stops early.",
+              },
+              {
+                number: "5",
+                title: "Pay and start",
+                text: "Send the exact amount, wait for payment confirmation, then start the session from your dashboard.",
+              },
+            ].map((step) => (
+              <div
+                key={step.number}
+                className="rounded-3xl border border-white/10 bg-white/5 p-7 shadow-[0_10px_40px_rgba(0,0,0,0.25)]"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15 text-lg font-bold text-cyan-300">
+                  {step.number}
+                </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-left shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-fuchsia-500/15 text-lg font-bold text-fuchsia-300">
-                2
+                <h3 className="mt-6 text-xl font-semibold">{step.title}</h3>
+                <p className="mt-4 text-sm leading-7 text-white/65">
+                  {step.text}
+                </p>
               </div>
-              <h3 className="mt-6 text-2xl font-semibold">Pay SOL</h3>
-              <p className="mt-4 leading-7 text-white/65">
-                Confirm your session with a clear payment flow and exact SOL
-                amount shown upfront.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-left shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-sm">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15 text-lg font-bold text-cyan-300">
-                3
-              </div>
-              <h3 className="mt-6 text-2xl font-semibold">Setup In Dashboard</h3>
-              <p className="mt-4 leading-7 text-white/65">
-                After payment, continue to the dashboard and configure the bot
-                before starting your session.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section id="pricing" className="bg-white px-6 py-24 text-black dark:bg-slate-950 dark:text-white">
+      <section
+        id="pricing"
+        className="bg-white px-6 py-24 text-black dark:bg-slate-950 dark:text-white"
+      >
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
-              Pricing
+              Tiers
             </p>
             <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
-              Simple tiers, clear pricing
+              Choose the right session tier
             </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg text-gray-500 dark:text-white/60">
-              Choose the package that matches your target volume and session
-              goals. All tiers include reactions.
+            <p className="mx-auto mt-5 max-w-2xl text-lg text-gray-600 dark:text-white/60">
+              Self-serve tiers can be configured directly online. Managed tiers
+              require support setup.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
-                Trial
-              </p>
-              <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight text-green-600">
-                  {formatPrice(TIERS.trial.priceSol)}
-                </p>
-                <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
-                  {TIERS.trial.subtitle}
-                </p>
-              </div>
-              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
-                Reactions included
-              </div>
-              <ul className="mt-8 space-y-3 text-sm text-gray-600 dark:text-white/70">
-                {TIERS.trial.features.map((feature) => (
-                  <li key={feature}>✔ {feature}</li>
-                ))}
-              </ul>
-              <button
-                onClick={() => openPurchaseFlow("trial")}
-                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
-              >
-                Start Free Trial
-              </button>
-            </div>
+          <div className="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+            {TIERS.map((tier) => {
+              const isFeatured = tier.key === "standard";
+              const isManaged = tier.managed;
 
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
-                Basic
-              </p>
-              <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight dark:text-white">
-                  {formatPrice(TIERS.basic.priceSol)}
-                </p>
-                <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
-                  {TIERS.basic.subtitle}
-                </p>
-              </div>
-              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
-                Reactions included
-              </div>
-              <ul className="mt-8 space-y-3 text-sm text-gray-600 dark:text-white/70">
-                {TIERS.basic.features.map((feature) => (
-                  <li key={feature}>✔ {feature}</li>
-                ))}
-              </ul>
-              <button
-                onClick={() => openPurchaseFlow("basic")}
-                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
-              >
-                Select Basic
-              </button>
-            </div>
+              return (
+                <div
+                  key={tier.key}
+                  className={`relative rounded-3xl border p-8 text-left transition ${
+                    isFeatured
+                      ? "border-cyan-400 bg-slate-950 text-white shadow-[0_20px_60px_rgba(0,0,0,0.18)] hover:-translate-y-1 hover:shadow-2xl"
+                      : "border-gray-200 bg-white shadow-sm hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900"
+                  }`}
+                >
+                  {isFeatured && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">
+                      Most Popular
+                    </div>
+                  )}
 
-            <div className="relative rounded-3xl border border-cyan-400 bg-slate-950 p-8 text-left text-white shadow-[0_20px_60px_rgba(0,0,0,0.18)] transition hover:-translate-y-1 hover:shadow-2xl">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">
-                Most Popular
-              </div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
-                Standard
-              </p>
-              <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">
-                  {formatPrice(TIERS.standard.priceSol)}
-                </p>
-                <p className="mt-2 text-sm text-white/60">
-                  {TIERS.standard.subtitle}
-                </p>
-              </div>
-              <div className="mt-6 inline-flex rounded-full bg-cyan-400/15 px-3 py-1 text-sm font-semibold text-cyan-300">
-                Reactions included
-              </div>
-              <ul className="mt-8 space-y-3 text-sm text-white/75">
-                {TIERS.standard.features.map((feature) => (
-                  <li key={feature}>✔ {feature}</li>
-                ))}
-              </ul>
-              <button
-                onClick={() => openPurchaseFlow("standard")}
-                className="mt-8 w-full rounded-xl bg-white py-3 font-semibold text-black transition hover:bg-cyan-300"
-              >
-                Select Standard
-              </button>
-            </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <p
+                      className={`text-sm font-semibold uppercase tracking-[0.2em] ${
+                        isFeatured
+                          ? "text-cyan-300"
+                          : "text-gray-400 dark:text-white/40"
+                      }`}
+                    >
+                      {tier.name}
+                    </p>
 
-            <div className="rounded-3xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
-                Pro
-              </p>
-              <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight dark:text-white">
-                  {formatPrice(TIERS.pro.priceSol)}
-                </p>
-                <p className="mt-2 text-sm text-gray-500 dark:text-white/60">
-                  {TIERS.pro.subtitle}
-                </p>
-              </div>
-              <div className="mt-6 inline-flex rounded-full bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
-                Reactions included
-              </div>
-              <ul className="mt-8 space-y-3 text-sm text-gray-600 dark:text-white/70">
-                {TIERS.pro.features.map((feature) => (
-                  <li key={feature}>✔ {feature}</li>
-                ))}
-              </ul>
-              <button
-                onClick={() => openPurchaseFlow("pro")}
-                className="mt-8 w-full rounded-xl bg-black py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
-              >
-                Select Pro
-              </button>
-            </div>
+                    {isManaged && (
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          isFeatured
+                            ? "bg-white/10 text-white"
+                            : "bg-cyan-50 text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300"
+                        }`}
+                      >
+                        Managed
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-5">
+                    <p className="text-4xl font-bold tracking-tight">
+                      {tier.priceSol} SOL
+                    </p>
+                    <p
+                      className={`mt-2 text-sm ${
+                        isFeatured
+                          ? "text-white/60"
+                          : "text-gray-500 dark:text-white/60"
+                      }`}
+                    >
+                      {formatDuration(tier.durationHours)} · {tier.walletCount}{" "}
+                      wallets
+                    </p>
+                  </div>
+
+                  <ul
+                    className={`mt-8 space-y-3 text-sm ${
+                      isFeatured
+                        ? "text-white/75"
+                        : "text-gray-600 dark:text-white/70"
+                    }`}
+                  >
+                    {tier.features.map((feature) => (
+                      <li key={feature}>✔ {feature}</li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => handleBuyNow(tier)}
+                    className={`mt-8 w-full rounded-xl py-3 font-semibold transition ${
+                      isFeatured
+                        ? "bg-white text-black hover:bg-cyan-300"
+                        : "bg-black text-white hover:opacity-90 dark:bg-white dark:text-black"
+                    }`}
+                  >
+                    {isManaged ? "Contact Support" : `Choose ${tier.name}`}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -470,60 +458,97 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-400">
-              Social Proof
+              FAQ
             </p>
             <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
-              Trusted by projects looking to create momentum
+              The main questions, answered directly
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-white/60">
-              Built to make launching volume campaigns simple, fast, and easier
-              to trust at a glance.
+              Keep the buying and session rules clear before money is sent and
+              before the session starts.
             </p>
           </div>
 
-          <div className="mt-14 text-center">
-            <p className="text-6xl font-bold tracking-tight text-white md:text-7xl">
-              1,200+
+          <div className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {faqItems.map((item) => (
+              <div
+                key={item.question}
+                className="rounded-3xl border border-white/10 bg-white/5 p-7"
+              >
+                <h3 className="text-lg font-semibold">{item.question}</h3>
+                <p className="mt-4 text-sm leading-7 text-white/65">
+                  {item.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-24">
+        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-2">
+          <div className="rounded-3xl border border-gray-200 bg-white p-8 dark:border-white/10 dark:bg-slate-900">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-500">
+              Referrals
             </p>
-            <p className="mt-3 text-lg text-white/65">
-              Sessions successfully run
+            <h2 className="mt-4 text-3xl font-bold tracking-tight">
+              Earn SOL by referring users
+            </h2>
+            <p className="mt-4 text-gray-600 dark:text-white/60">
+              Referral earnings are built into the product. New referrals pay
+              15% for the first 30 days after registration, then 10% after that.
+              Payouts are automatic once the minimum threshold is met.
             </p>
+
+            <div className="mt-6 flex flex-wrap gap-3 text-sm">
+              <span className="rounded-full bg-gray-100 px-3 py-1.5 dark:bg-white/5">
+                15% first 30 days
+              </span>
+              <span className="rounded-full bg-gray-100 px-3 py-1.5 dark:bg-white/5">
+                10% after 30 days
+              </span>
+              <span className="rounded-full bg-gray-100 px-3 py-1.5 dark:bg-white/5">
+                Auto payouts
+              </span>
+            </div>
+
+            <button
+              onClick={() => router.push("/referrals")}
+              className="mt-8 rounded-xl bg-black px-6 py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
+            >
+              View Referrals
+            </button>
           </div>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
-              <p className="text-3xl font-bold text-cyan-300">1,200+</p>
-              <p className="mt-3 text-lg font-semibold">Sessions run</p>
-              <p className="mt-2 text-sm leading-6 text-white/60">
-                A growing number of campaigns already launched through the
-                platform.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
-              <p className="text-3xl font-bold text-fuchsia-300">Included</p>
-              <p className="mt-3 text-lg font-semibold">Reactions included</p>
-              <p className="mt-2 text-sm leading-6 text-white/60">
-                Clearer social proof and stronger perceived activity in one
-                flow.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
-              <p className="text-3xl font-bold text-cyan-300">Fast</p>
-              <p className="mt-3 text-lg font-semibold">
-                Simple launch process
-              </p>
-              <p className="mt-2 text-sm leading-6 text-white/60">
-                Pick a tier, pay SOL, then configure the bot in dashboard before launch.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-12 text-center">
-            <p className="text-sm uppercase tracking-[0.2em] text-white/35">
-              More visibility. Cleaner launch flow. Stronger first impression.
+          <div
+            id="support"
+            className="rounded-3xl border border-gray-200 bg-white p-8 dark:border-white/10 dark:bg-slate-900"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-500">
+              Support
             </p>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight">
+              Payment issue, managed tier request, or session problem?
+            </h2>
+            <p className="mt-4 text-gray-600 dark:text-white/60">
+              Contact support when a payment is delayed, the wrong amount was
+              sent, you need a managed tier configured, or a session requires
+              intervention. Include your session ID whenever possible.
+            </p>
+
+            <div className="mt-6 space-y-2 text-sm text-gray-600 dark:text-white/60">
+              <p>• Payment not confirmed</p>
+              <p>• Wrong amount sent</p>
+              <p>• Alpha or Launch Kit setup</p>
+              <p>• Session restart or failure issue</p>
+            </div>
+
+            <button
+              onClick={() => window.open("https://t.me/pmprv1_bot", "_blank")}
+              className="mt-8 rounded-xl bg-black px-6 py-3 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
+            >
+              Contact Support
+            </button>
           </div>
         </div>
       </section>
@@ -534,11 +559,12 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-3">
                 <img src="/logo_bothead.png" alt="Logo" className="h-10 w-10" />
-                <p className="text-lg font-bold text-black dark:text-white">PMPR</p>
+                <p className="text-lg font-bold">PMPR</p>
               </div>
+
               <p className="mt-4 text-sm text-gray-500 dark:text-white/60">
-                Automated Solana volume generation designed to simulate real
-                market activity and help projects gain traction.
+                Solana volume sessions with a clearer buying flow, session
+                tracking, and referral support.
               </p>
             </div>
 
@@ -547,45 +573,108 @@ export default function Home() {
                 Product
               </p>
               <ul className="mt-4 space-y-3 text-sm text-gray-600 dark:text-white/65">
-                <li><a href="#pricing" className="hover:text-black dark:hover:text-white">Buy Session</a></li>
-                <li><a href="/dashboard" className="hover:text-black dark:hover:text-white">Dashboard</a></li>
-                <li><a href="/sessions" className="hover:text-black dark:hover:text-white">Sessions</a></li>
-                <li><a href="/referrals" className="hover:text-black dark:hover:text-white">Referrals</a></li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection("pricing")}
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    Buy Session
+                  </button>
+                </li>
+                <li>
+                  <a
+                    href="/dashboard"
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/sessions"
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    Sessions
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/referrals"
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    Referrals
+                  </a>
+                </li>
               </ul>
             </div>
 
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
-                Company
+                Learn
               </p>
               <ul className="mt-4 space-y-3 text-sm text-gray-600 dark:text-white/65">
-                <li><a href="#" className="hover:text-black dark:hover:text-white">About</a></li>
-                <li><a href="#" className="hover:text-black dark:hover:text-white">Support</a></li>
-                <li><a href="#" className="hover:text-black dark:hover:text-white">Contact</a></li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection("how-it-works")}
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    How It Works
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection("support")}
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    Support
+                  </button>
+                </li>
               </ul>
             </div>
 
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-white/40">
-                Legal
+                Access
               </p>
               <ul className="mt-4 space-y-3 text-sm text-gray-600 dark:text-white/65">
-                <li><a href="#" className="hover:text-black dark:hover:text-white">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-black dark:hover:text-white">Privacy Policy</a></li>
+                <li>
+                  <a
+                    href="/login"
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    Login
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/settings"
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    Settings
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
 
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 dark:border-white/10 md:flex-row">
-            <p className="text-sm text-gray-500 dark:text-white/60">©2026 PMPR. All rights reserved.</p>
+            <p className="text-sm text-gray-500 dark:text-white/60">
+              ©2026 PMPR. All rights reserved.
+            </p>
 
             <div className="flex items-center gap-4">
-              <a href="#" className="text-sm text-gray-500 hover:text-black dark:text-white/60 dark:hover:text-white">
+              <button
+                onClick={() => window.open("https://t.me/pmprv1_bot", "_blank")}
+                className="text-sm text-gray-500 hover:text-black dark:text-white/60 dark:hover:text-white"
+              >
                 Telegram
-              </a>
-              <a href="#" className="text-sm text-gray-500 hover:text-black dark:text-white/60 dark:hover:text-white">
+              </button>
+              <button
+                onClick={() => scrollToSection("support")}
+                className="text-sm text-gray-500 hover:text-black dark:text-white/60 dark:hover:text-white"
+              >
                 Support
-              </a>
+              </button>
             </div>
           </div>
         </div>

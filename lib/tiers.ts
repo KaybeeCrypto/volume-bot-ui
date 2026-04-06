@@ -1,70 +1,60 @@
-export const TIER_KEYS = ["trial", "basic", "standard", "pro"] as const;
+// lib/tiers.ts
 
-export type TierKey = (typeof TIER_KEYS)[number];
+import type { TierConfig } from "@/types/tier";
 
-export type TierConfig = {
-  key: TierKey;
-  name: string;
-  priceSol: string;
-  subtitle: string;
-  features: readonly string[];
-  badge?: string;
-};
-
-export const TIERS: Record<TierKey, TierConfig> = {
-  trial: {
-    key: "trial",
-    name: "Trial",
-    priceSol: "FREE",
-    subtitle: "Best for testing the flow",
-    features: [
-      "Entry-level session",
-      "Volume generation",
-      "Clear setup flow",
-      "Fast launch",
-    ],
-  },
-  basic: {
+export const TIERS: TierConfig[] = [
+  {
     key: "basic",
     name: "Basic",
-    priceSol: "1.8",
-    subtitle: "Solid starting point for smaller launches",
-    features: [
-      "Reliable activity boost",
-      "Volume generation",
-      "Good budget balance",
-      "Straightforward setup",
-    ],
+    priceSol: 1.5,
+    durationHours: 24,
+    walletCount: 10,
+    features: ["Volume only"],
+    managed: false,
   },
-  standard: {
+  {
     key: "standard",
     name: "Standard",
-    priceSol: "3.2",
-    subtitle: "Best balance of cost and visible impact",
-    features: [
-      "Stronger activity profile",
-      "Volume generation",
-      "Better social proof effect",
-      "Ideal default choice",
-    ],
-    badge: "Most Popular",
+    priceSol: 3,
+    durationHours: 24,
+    walletCount: 30,
+    features: ["Volume", "Rotation"],
+    managed: false,
   },
-  pro: {
+  {
     key: "pro",
     name: "Pro",
-    priceSol: "5.5",
-    subtitle: "For bigger pushes and stronger session coverage",
-    features: [
-      "Higher session intensity",
-      "Volume generation",
-      "Broader visible activity",
-      "Premium tier option",
-    ],
+    priceSol: 5,
+    durationHours: 24,
+    walletCount: 50,
+    features: ["Volume", "Rotation", "Reactions"],
+    managed: false,
   },
-};
+  {
+    key: "alpha",
+    name: "Alpha",
+    priceSol: 25,
+    durationHours: 48,
+    walletCount: 200,
+    features: ["Managed", "Blue chip", "Smart money"],
+    managed: true,
+  },
+  {
+    key: "launch_kit",
+    name: "Launch Kit",
+    priceSol: 45,
+    durationHours: 48,
+    walletCount: 500,
+    features: ["Full package"],
+    managed: true,
+  },
+];
 
-export const TIER_LIST: TierConfig[] = TIER_KEYS.map((key) => TIERS[key]);
-
-export function getTierByKey(key: TierKey): TierConfig {
-  return TIERS[key];
+// Helper: get tier by key
+export function getTierByKey(key: string): TierConfig | undefined {
+  return TIERS.find((t) => t.key === key);
 }
+
+// Helper: separate self-serve vs managed
+export const SELF_SERVE_TIERS = TIERS.filter((t) => !t.managed);
+export const MANAGED_TIERS = TIERS.filter((t) => t.managed);
