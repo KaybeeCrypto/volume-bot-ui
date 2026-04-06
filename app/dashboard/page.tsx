@@ -738,30 +738,72 @@ export default function VolumeBotDashboardPage() {
 
           <SectionCard
             title="Wallet Activity"
-            description="Track participating wallets and their most recent actions."
+            description="Track participating wallets, execution health, and latest wallet actions."
             id="wallets"
           >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <MiniMetric label="Active" value={String(summary.activeWallets)} />
-              <MiniMetric label="Idle" value={String(summary.idleWallets)} />
-              <MiniMetric label="Failed" value={String(summary.failedWallets)} />
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:w-auto">
+                <MetricHighlightCard
+                  label="Active Wallets"
+                  value={String(summary.activeWallets)}
+                  subvalue={`${summary.activeWallets} currently participating`}
+                  tone="strong"
+                />
+                <MetricHighlightCard
+                  label="Idle Wallets"
+                  value={String(summary.idleWallets)}
+                  subvalue="Awaiting next execution window"
+                  tone="neutral"
+                />
+                <MetricHighlightCard
+                  label="Failed Wallets"
+                  value={String(summary.failedWallets)}
+                  subvalue="Require review or retry"
+                  tone="muted"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <UtilityPill label={`Loaded: ${summary.totalWallets}`} />
+                <UtilityPill label={`Buy cycles: ${summary.buyCycles}`} />
+                <UtilityPill label={`Sell cycles: ${summary.sellCycles}`} />
+              </div>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-2xl border border-black/10 dark:border-white/10">
-              <div className="grid grid-cols-4 border-b border-black/10 bg-black/[0.03] px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-black/45 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/45">
+            <div className="md:hidden space-y-3">
+              {walletRows.map((wallet) => (
+                <WalletActivityCard
+                  key={wallet.address}
+                  address={wallet.address}
+                  status={wallet.status}
+                  lastAction={wallet.lastAction}
+                  lastTrade={wallet.lastTrade}
+                />
+              ))}
+            </div>
+
+            <div className="hidden md:block overflow-hidden rounded-[24px] border border-black/10 bg-white dark:border-white/10 dark:bg-slate-950">
+              <div className="grid grid-cols-[1.35fr_0.9fr_1fr_0.7fr] border-b border-black/10 bg-black/[0.03] px-5 py-4 text-[11px] font-medium uppercase tracking-[0.18em] text-black/45 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/45">
                 <span>Wallet</span>
                 <span>Status</span>
                 <span>Last Action</span>
                 <span>Last Trade</span>
               </div>
+
               <div className="divide-y divide-black/10 dark:divide-white/10">
                 {walletRows.map((wallet) => (
                   <div
                     key={wallet.address}
-                    className="grid grid-cols-4 px-4 py-3 text-sm text-black/75 transition hover:bg-black/[0.02] dark:text-white/75 dark:hover:bg-white/[0.03]"
+                    className="grid grid-cols-[1.35fr_0.9fr_1fr_0.7fr] items-center px-5 py-4 text-sm text-black/72 transition hover:bg-black/[0.02] dark:text-white/72 dark:hover:bg-white/[0.03]"
                   >
-                    <span className="font-medium text-black dark:text-white">{wallet.address}</span>
-                    <span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-black dark:text-white">{wallet.address}</span>
+                      <span className="mt-1 text-xs text-black/45 dark:text-white/45">
+                        Solana execution wallet
+                      </span>
+                    </div>
+
+                    <div>
                       <StatusBadge
                         label={wallet.status}
                         variant={
@@ -772,9 +814,18 @@ export default function VolumeBotDashboardPage() {
                             : "Failed"
                         }
                       />
-                    </span>
-                    <span className="font-medium text-black dark:text-white">{wallet.lastAction}</span>
-                    <span>{wallet.lastTrade}</span>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="font-medium text-black dark:text-white">{wallet.lastAction}</span>
+                      <span className="mt-1 text-xs text-black/45 dark:text-white/45">
+                        Latest recorded event
+                      </span>
+                    </div>
+
+                    <div className="text-sm font-medium text-black/65 dark:text-white/65">
+                      {wallet.lastTrade}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -830,18 +881,94 @@ function SectionCard({ title, description, children, id, headerRight }: SectionC
   );
 }
 
-type MiniMetricProps = {
+type MetricHighlightCardProps = {
   label: string;
   value: string;
+  subvalue: string;
+  tone: "strong" | "neutral" | "muted";
 };
 
-function MiniMetric({ label, value }: MiniMetricProps) {
+function MetricHighlightCard({
+  label,
+  value,
+  subvalue,
+  tone,
+}: MetricHighlightCardProps) {
+  const toneClassMap: Record<MetricHighlightCardProps["tone"], string> = {
+    strong:
+      "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white",
+    neutral:
+      "bg-white text-black border-black/10 dark:bg-slate-950 dark:text-white dark:border-white/10",
+    muted:
+      "bg-black/[0.02] text-black border-black/10 dark:bg-white/[0.03] dark:text-white dark:border-white/10",
+  };
+
+  const subduedTextClassMap: Record<MetricHighlightCardProps["tone"], string> = {
+    strong: "text-white/70 dark:text-black/70",
+    neutral: "text-black/55 dark:text-white/55",
+    muted: "text-black/55 dark:text-white/55",
+  };
+
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-slate-950">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+    <div
+      className={`rounded-[24px] border p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] ${toneClassMap[tone]}`}
+    >
+      <p className={`text-[11px] font-medium uppercase tracking-[0.18em] ${subduedTextClassMap[tone]}`}>
         {label}
       </p>
-      <p className="mt-3 text-xl font-semibold text-black dark:text-white">{value}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className={`mt-2 text-sm ${subduedTextClassMap[tone]}`}>{subvalue}</p>
+    </div>
+  );
+}
+
+type WalletActivityCardProps = {
+  address: string;
+  status: string;
+  lastAction: string;
+  lastTrade: string;
+};
+
+function WalletActivityCard({
+  address,
+  status,
+  lastAction,
+  lastTrade,
+}: WalletActivityCardProps) {
+  const resolvedVariant =
+    status === "Active" ? "Active" : status === "Idle" ? "Idle" : "Failed";
+
+  return (
+    <div className="rounded-[24px] border border-black/10 bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.04)] dark:border-white/10 dark:bg-slate-950">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+            Wallet
+          </p>
+          <p className="mt-2 text-base font-semibold text-black dark:text-white">{address}</p>
+          <p className="mt-1 text-xs text-black/45 dark:text-white/45">
+            Solana execution wallet
+          </p>
+        </div>
+
+        <StatusBadge label={status} variant={resolvedVariant} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-black/10 bg-black/[0.02] px-3 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+            Last Action
+          </p>
+          <p className="mt-2 text-sm font-medium text-black dark:text-white">{lastAction}</p>
+        </div>
+
+        <div className="rounded-2xl border border-black/10 bg-black/[0.02] px-3 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+            Last Trade
+          </p>
+          <p className="mt-2 text-sm font-medium text-black dark:text-white">{lastTrade}</p>
+        </div>
+      </div>
     </div>
   );
 }
