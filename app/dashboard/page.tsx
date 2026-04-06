@@ -337,47 +337,7 @@ export default function VolumeBotDashboardPage() {
             />
           </div>
 
-          <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-slate-900 sm:p-7">
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">
-                    Token Chart
-                  </h2>
-                  <StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />
-                </div>
-                <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">
-                  {summary.tokenAddress
-                    ? `Tracking ${summary.tokenName} (${summary.tokenAddressDisplay}) in the current session.`
-                    : "Live GeckoTerminal chart for the active Solana token."}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75">
-                  {summary.geckoMode === "pools" ? "Solana pool" : "Solana token"}
-                </span>
-              </div>
-            </div>
-
-            {summary.tokenAddress ? (
-              <GeckoTerminalChart
-                mode={summary.geckoMode}
-                address={summary.tokenAddress}
-                height={560}
-                chartType="price"
-                resolution="15m"
-                lightChart={theme === "light"}
-                showInfo={false}
-                showSwaps={false}
-                bgColor={theme === "light" ? "ffffff" : "0b1120"}
-              />
-            ) : (
-              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55 dark:border-white/15 dark:text-white/55">
-                No Solana token configured yet. Enter a token address in the Control Section to load the chart.
-              </div>
-            )}
-          </section>
+          
 
           <SectionCard
             id="control"
@@ -506,6 +466,48 @@ export default function VolumeBotDashboardPage() {
               </p>
             </div>
           </SectionCard>
+
+          <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-slate-900 sm:p-7">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">
+                    Token Chart
+                  </h2>
+                  <StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />
+                </div>
+                <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">
+                  {summary.tokenAddress
+                    ? `Tracking ${summary.tokenName} (${summary.tokenAddressDisplay}) in the current session.`
+                    : "Live GeckoTerminal chart for the active Solana token."}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="inline-flex rounded-full border border-black/10 bg-black/[0.04] px-3 py-1 text-xs font-medium text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75">
+                  {summary.geckoMode === "pools" ? "Solana pool" : "Solana token"}
+                </span>
+              </div>
+            </div>
+
+            {summary.tokenAddress ? (
+              <GeckoTerminalChart
+                mode={summary.geckoMode}
+                address={summary.tokenAddress}
+                height={560}
+                chartType="price"
+                resolution="15m"
+                lightChart={theme === "light"}
+                showInfo={false}
+                showSwaps={false}
+                bgColor={theme === "light" ? "ffffff" : "0b1120"}
+              />
+            ) : (
+              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55 dark:border-white/15 dark:text-white/55">
+                No Solana token configured yet. Enter a token address in the Control Section to load the chart.
+              </div>
+            )}
+          </section>
 
           <SectionCard
             title="Wallet Activity"
