@@ -200,61 +200,83 @@ export default function Home() {
 
       <DevDisclaimer />
 
-      <section className="flex justify-center md:justify-end">
-            <div className="relative flex h-[280px] w-[280px] items-center justify-center md:h-[430px] md:w-[430px]">
-              <img
-                src="/logo_bothead.png"
-                alt="Volbot"
-                className="w-[360px] max-w-none drop-shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:w-[560px]"
-              />
-            </div>
+      <section className="px-6 pb-20 pt-20 md:pb-24 md:pt-24">
+        <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
+          <div className="relative flex h-[220px] w-[220px] items-center justify-center md:h-[320px] md:w-[320px]">
+            <img
+              src="/logo_bothead.png"
+              alt="Volbot"
+              className="w-[220px] drop-shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:w-[320px]"
+            />
+          </div>
+
+          <p className="mt-2 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
+            Solana Volume Sessions
+          </p>
+
+          <h1 className="mt-4 max-w-4xl text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+            Launch and manage Solana volume sessions from one place.
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-600 dark:text-white/65">
+            Volbot helps generate trading activity, wallet rotation, and
+            visibility signals across the tools traders already watch. Choose a
+            tier, validate your token, pay the exact amount, and start your
+            session.
+          </p>
+
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <button
+              onClick={() => router.push("/buy")}
+              className="rounded-xl bg-black px-8 py-3.5 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
+            >
+              Buy Session
+            </button>
+
+            <button
+              onClick={() => scrollToSection("how-it-works")}
+              className="rounded-xl border border-black px-8 py-3.5 font-semibold transition hover:bg-gray-100 dark:border-white dark:hover:bg-white/10"
+            >
+              How It Works
+            </button>
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500 dark:text-white/45">
+            <span>3-hour payment window</span>
+            <span>•</span>
+            <span>Return wallet support</span>
+            <span>•</span>
+            <span>Session tracking in dashboard</span>
           </div>
         </div>
+      </section>
 
-
-
-      <div className="px-6 pb-20 pt-24 md:pb-24 md:pt-28">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-[1.15fr_0.85fr]">
-          <div className="text-center md:text-left">
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
-              Solana Volume Sessions
+      <section className="px-6 pb-16">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-slate-900">
+          <div className="text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gray-400 dark:text-white/40">
+              Visibility Targets
             </p>
-
-            <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-              Launch and manage Solana volume sessions from one place.
-            </h1>
-
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600 md:mx-0 dark:text-white/65">
-              Volbot helps generate trading activity, wallet rotation, and
-              visibility signals across the tools traders already watch. Choose
-              a tier, validate your token, pay the exact amount, and start your
-              session.
+            <h2 className="mt-3 text-2xl font-bold tracking-tight md:text-3xl">
+              Built for the places traders actually look
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-gray-600 dark:text-white/60">
+              Volbot is designed to support visibility signals across the
+              platforms that shape early token attention.
             </p>
-
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
-              <button
-                onClick={() => router.push("/buy")}
-                className="rounded-xl bg-black px-8 py-3.5 font-semibold text-white transition hover:opacity-90 dark:bg-white dark:text-black"
-              >
-                Buy Session
-              </button>
-
-              <button
-                onClick={() => scrollToSection("how-it-works")}
-                className="rounded-xl border border-black px-8 py-3.5 font-semibold transition hover:bg-gray-100 dark:border-white dark:hover:bg-white/10"
-              >
-                How It Works
-              </button>
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500 md:justify-start dark:text-white/45">
-              <span>3-hour payment window</span>
-              <span>•</span>
-              <span>Return wallet support</span>
-              <span>•</span>
-              <span>Session tracking in dashboard</span>
-            </div>
           </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {["DexScreener", "GMGN", "Axiom", "Photon"].map((platform) => (
+              <div
+                key={platform}
+                className="rounded-2xl bg-gray-50 px-5 py-6 text-center text-lg font-semibold dark:bg-white/5"
+              >
+                {platform}
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
           
