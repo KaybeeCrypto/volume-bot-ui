@@ -200,7 +200,7 @@ export default function Home() {
 
       <DevDisclaimer />
 
-      <div className="flex justify-center md:justify-end">
+      <section className="flex justify-center md:justify-end">
             <div className="relative flex h-[280px] w-[280px] items-center justify-center md:h-[430px] md:w-[430px]">
               <img
                 src="/logo_bothead.png"
@@ -210,10 +210,10 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
 
 
-      <section className="px-6 pb-20 pt-24 md:pb-24 md:pt-28">
+
+      <div className="px-6 pb-20 pt-24 md:pb-24 md:pt-28">
         <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-[1.15fr_0.85fr]">
           <div className="text-center md:text-left">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-500">
@@ -255,6 +255,7 @@ export default function Home() {
               <span>Session tracking in dashboard</span>
             </div>
           </div>
+      </section>
 
           
       <section className="px-6 pb-16">
