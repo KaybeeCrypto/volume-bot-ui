@@ -206,7 +206,7 @@ export default function Home() {
             <img
               src="/logo_bothead.png"
               alt="Volbot"
-              className="w-[220px] drop-shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:w-[320px]"
+              className="w-[320px] drop-shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:w-[420px]"
             />
           </div>
 
@@ -219,7 +219,7 @@ export default function Home() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-600 dark:text-white/65">
-            Volbot helps generate trading activity, wallet rotation, and
+            PMPR helps generate trading activity, wallet rotation, and
             visibility signals across the tools traders already watch. Choose a
             tier, validate your token, pay the exact amount, and start your
             session.
@@ -261,7 +261,7 @@ export default function Home() {
               Built for the places traders actually look
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-gray-600 dark:text-white/60">
-              Volbot is designed to support visibility signals across the
+              PMPR is designed to support visibility signals across the
               platforms that shape early token attention.
             </p>
           </div>
@@ -290,7 +290,7 @@ export default function Home() {
               Built for the places traders actually look
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-gray-600 dark:text-white/60">
-              Volbot is designed to support visibility signals across the
+              PMPR is designed to support visibility signals across the
               platforms that shape early token attention.
             </p>
           </div>
