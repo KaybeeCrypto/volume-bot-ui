@@ -200,6 +200,19 @@ export default function Home() {
 
       <DevDisclaimer />
 
+      <div className="flex justify-center md:justify-end">
+            <div className="relative flex h-[280px] w-[280px] items-center justify-center md:h-[430px] md:w-[430px]">
+              <img
+                src="/logo_bothead.png"
+                alt="Volbot"
+                className="w-[360px] max-w-none drop-shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:w-[560px]"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+
       <section className="px-6 pb-20 pt-24 md:pb-24 md:pt-28">
         <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-[1.15fr_0.85fr]">
           <div className="text-center md:text-left">
@@ -243,18 +256,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex justify-center md:justify-end">
-            <div className="relative flex h-[280px] w-[280px] items-center justify-center md:h-[430px] md:w-[430px]">
-              <img
-                src="/logo_bothead.png"
-                alt="Volbot"
-                className="w-[360px] max-w-none drop-shadow-[0_24px_60px_rgba(0,0,0,0.18)] md:w-[560px]"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
+          
       <section className="px-6 pb-16">
         <div className="mx-auto max-w-7xl rounded-3xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-slate-900">
           <div className="text-center">
