@@ -279,35 +279,6 @@ export default function Home() {
         </div>
       </section>
 
-          
-      <section className="px-6 pb-16">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-slate-900">
-          <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gray-400 dark:text-white/40">
-              Visibility Targets
-            </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight md:text-3xl">
-              Built for the places traders actually look
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-gray-600 dark:text-white/60">
-              PMPR is designed to support visibility signals across the
-              platforms that shape early token attention.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {["DexScreener", "GMGN", "Axiom", "Photon"].map((platform) => (
-              <div
-                key={platform}
-                className="rounded-2xl bg-gray-50 px-5 py-6 text-center text-lg font-semibold dark:bg-white/5"
-              >
-                {platform}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section
         id="how-it-works"
         className="bg-slate-950 px-6 py-24 text-white"
