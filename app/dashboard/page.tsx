@@ -13,70 +13,109 @@ import GeckoTerminalChart from "@/components/GeckoTerminalChart";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useTheme } from "@/components/ThemeProvider";
 
+type SessionStatus = "Ready" | "Running" | "Paused" | "Stopped";
+
 type DashboardSummary = {
   tokenName: string;
   tokenAddress: string;
   tokenAddressDisplay: string;
   geckoMode: "tokens" | "pools";
-  completedCycles: number;
-  cycleStatus: "Running" | "Paused" | "Stopped";
-  perBuyRate: string;
-  perSellRate: string;
-  dailyUsed: number;
-  dailyLimit: number;
-  activeWallets: number;
+  cycleStatus: SessionStatus;
+  tierName: string;
   totalWallets: number;
-  buyCycles: number;
-  sellCycles: number;
-  maxCycles: number;
-  idleWallets: number;
-  failedWallets: number;
-  remainingToday: number;
-  estimatedCyclesLeft: number;
-};
-
-type BotConfig = {
-  tokenAddress: string;
-  perBuyRate: string;
-  perSellRate: string;
-  dailyLimit: string;
-  walletsToExecute: string;
-  maxCycles: string;
+  maxPerWallet: string;
+  totalPotentialUsage: string;
+  returnWallet: string;
   buyInterval: string;
   sellInterval: string;
   slippage: string;
   executionMode: string;
   randomizeAmounts: boolean;
   autoStopOnLimit: boolean;
+  completedCycles: number;
+  buyCycles: number;
+  sellCycles: number;
+  maxCycles: number;
+  dailyUsed: number;
+  dailyLimit: number;
+  activeWallets: number;
+  idleWallets: number;
+  failedWallets: number;
+  remainingToday: number;
+  estimatedCyclesLeft: number;
 };
 
-const BOT_CONFIG_STORAGE_KEY = "pmpr_bot_config";
+type OperatorConfig = {
+  buyInterval: string;
+  sellInterval: string;
+  slippage: string;
+  executionMode: string;
+  maxCycles: string;
+  randomizeAmounts: boolean;
+  autoStopOnLimit: boolean;
+};
+
+type PurchaseConfig = {
+  tokenAddress: string;
+  tokenTicker: string;
+  wallets: string;
+  maxPerWallet: string;
+  dailyLimit: string;
+  returnWallet: string;
+};
+
+const OPERATOR_CONFIG_STORAGE_KEY = "pmpr_operator_config";
+
+const defaultOperatorConfig: OperatorConfig = {
+  buyInterval: "15s",
+  sellInterval: "15s",
+  slippage: "1%",
+  executionMode: "Balanced",
+  maxCycles: "200",
+  randomizeAmounts: true,
+  autoStopOnLimit: true,
+};
+
+const defaultPurchaseConfig: PurchaseConfig = {
+  tokenAddress: "",
+  tokenTicker: "",
+  wallets: "24",
+  maxPerWallet: "0.15",
+  dailyLimit: "20",
+  returnWallet: "",
+};
+
+function shortenAddress(address?: string | null) {
+  if (!address) return "Not configured";
+  if (address.length <= 10) return address;
+  return `${address.slice(0, 4)}...${address.slice(-4)}`;
+}
+
+function formatSol(value: string | number) {
+  const numeric = typeof value === "number" ? value : Number(value || 0);
+  if (!Number.isFinite(numeric)) return "0.00 SOL";
+  return `${numeric.toFixed(numeric % 1 === 0 ? 0 : 2)} SOL`;
+}
 
 export default function VolumeBotDashboardPage() {
   const router = useRouter();
-  const [sessionStatus, setSessionStatus] = useState<"Running" | "Paused" | "Stopped">("Running");
+  const [sessionStatus, setSessionStatus] = useState<SessionStatus>("Ready");
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [configuredTokenAddress, setConfiguredTokenAddress] = useState("");
   const [configuredTokenTicker, setConfiguredTokenTicker] = useState("");
-  const [tokenLookupLoading, setTokenLookupLoading] = useState(false);
-  const [tokenLookupError, setTokenLookupError] = useState("");
-  const [configSaveMessage, setConfigSaveMessage] = useState("");
+  const [operatorSaveMessage, setOperatorSaveMessage] = useState("");
 
-  const [botConfig, setBotConfig] = useState<BotConfig>({
-    tokenAddress: "",
-    perBuyRate: "0.15",
-    perSellRate: "0.15",
-    dailyLimit: "20",
-    walletsToExecute: "24",
-    maxCycles: "200",
-    buyInterval: "15s",
-    sellInterval: "15s",
-    slippage: "1%",
-    executionMode: "Balanced",
-    randomizeAmounts: true,
-    autoStopOnLimit: true,
-  });
+  const [purchaseConfig, setPurchaseConfig] = useState<PurchaseConfig>(defaultPurchaseConfig);
+  const [operatorConfig, setOperatorConfig] = useState<OperatorConfig>(defaultOperatorConfig);
+
+  const [pendingPurchase, setPendingPurchase] = useState<null | {
+    tierKey: string;
+    tierName: string;
+    priceSol: string;
+    purchasedAt: number;
+    setupRequired: boolean;
+  }>(null);
 
   const { session, loading: sessionLoading, refreshSession } = useAuthSession();
   const { disconnect, select } = useWallet();
@@ -106,202 +145,148 @@ export default function VolumeBotDashboardPage() {
     try {
       const savedAddress = localStorage.getItem("pmpr_chart_token_address");
       const savedTicker = localStorage.getItem("pmpr_chart_token_ticker");
-      const savedConfig = localStorage.getItem(BOT_CONFIG_STORAGE_KEY);
+      const savedOperatorConfig = localStorage.getItem(OPERATOR_CONFIG_STORAGE_KEY);
+      const rawPendingPurchase = localStorage.getItem("pmpr_pending_purchase");
 
-      if (savedConfig) {
-        const parsed = JSON.parse(savedConfig) as Partial<BotConfig>;
-        setBotConfig((prev) => ({
+      const nextPurchaseConfig: PurchaseConfig = {
+        tokenAddress: savedAddress || "",
+        tokenTicker: savedTicker || "",
+        wallets:
+          localStorage.getItem("pmpr_wallet_count") ||
+          localStorage.getItem("pmpr_wallets_to_execute") ||
+          defaultPurchaseConfig.wallets,
+        maxPerWallet:
+          localStorage.getItem("pmpr_max_wallet_balance") ||
+          localStorage.getItem("pmpr_per_wallet_balance") ||
+          defaultPurchaseConfig.maxPerWallet,
+        dailyLimit: localStorage.getItem("pmpr_daily_limit") || defaultPurchaseConfig.dailyLimit,
+        returnWallet:
+          localStorage.getItem("pmpr_return_wallet") ||
+          localStorage.getItem("pmpr_unused_sol_wallet") ||
+          "",
+      };
+
+      setPurchaseConfig(nextPurchaseConfig);
+      setConfiguredTokenAddress(nextPurchaseConfig.tokenAddress);
+      setConfiguredTokenTicker(nextPurchaseConfig.tokenTicker);
+
+      if (savedOperatorConfig) {
+        const parsed = JSON.parse(savedOperatorConfig) as Partial<OperatorConfig>;
+        setOperatorConfig((prev) => ({
           ...prev,
           ...parsed,
         }));
       }
 
-      if (savedAddress) {
-        setConfiguredTokenAddress(savedAddress);
-        setBotConfig((prev) => ({
-          ...prev,
-          tokenAddress: prev.tokenAddress || savedAddress,
-        }));
-      }
-
-      if (savedTicker) {
-        setConfiguredTokenTicker(savedTicker);
+      if (rawPendingPurchase) {
+        const parsed = JSON.parse(rawPendingPurchase);
+        setPendingPurchase(parsed);
       }
     } catch {
-      // ignore storage errors
+      setPendingPurchase(null);
     }
   }, []);
 
   useBodyScrollLock(menuOpen);
   useRequireSession(sessionLoading, session);
 
-  const walletsToExecuteNumber = Number(botConfig.walletsToExecute) || 0;
-  const maxCyclesNumber = Number(botConfig.maxCycles) || 0;
-  const dailyLimitNumber = Number(botConfig.dailyLimit) || 0;
-  const activeWallets = Math.min(18, walletsToExecuteNumber || 18);
-  const remainingToday = Math.max(dailyLimitNumber - 12, 0);
+  const walletsNumber = Number(purchaseConfig.wallets) || 0;
+  const maxPerWalletNumber = Number(purchaseConfig.maxPerWallet) || 0;
+  const dailyLimitNumber = Number(purchaseConfig.dailyLimit) || 0;
+  const maxCyclesNumber = Number(operatorConfig.maxCycles) || 0;
+
+  const activeWallets =
+    sessionStatus === "Stopped"
+      ? 0
+      : sessionStatus === "Paused"
+      ? Math.max(Math.min(6, walletsNumber), 0)
+      : Math.min(18, walletsNumber || 18);
+
+  const dailyUsed = sessionStatus === "Ready" ? 0 : sessionStatus === "Stopped" ? 0 : 12;
+  const remainingToday = Math.max(dailyLimitNumber - dailyUsed, 0);
+  const totalPotentialUsage = walletsNumber * maxPerWalletNumber;
 
   const summary = useMemo<DashboardSummary>(
     () => ({
       tokenName: configuredTokenTicker || "Not configured",
       tokenAddress: configuredTokenAddress,
-      tokenAddressDisplay: configuredTokenAddress
-        ? `${configuredTokenAddress.slice(0, 4)}...${configuredTokenAddress.slice(-4)}`
-        : "Not configured",
+      tokenAddressDisplay: shortenAddress(configuredTokenAddress),
       geckoMode: "tokens",
-      completedCycles: 128,
       cycleStatus: sessionStatus,
-      perBuyRate: `${botConfig.perBuyRate || "0.00"} SOL`,
-      perSellRate: `${botConfig.perSellRate || "0.00"} SOL`,
-      dailyUsed: 12,
+      tierName: pendingPurchase?.tierName || "Active Tier",
+      totalWallets: walletsNumber || 24,
+      maxPerWallet: formatSol(maxPerWalletNumber || 0.15),
+      totalPotentialUsage: formatSol(totalPotentialUsage || 3.6),
+      returnWallet: shortenAddress(purchaseConfig.returnWallet),
+      buyInterval: operatorConfig.buyInterval,
+      sellInterval: operatorConfig.sellInterval,
+      slippage: operatorConfig.slippage,
+      executionMode: operatorConfig.executionMode,
+      randomizeAmounts: operatorConfig.randomizeAmounts,
+      autoStopOnLimit: operatorConfig.autoStopOnLimit,
+      completedCycles: sessionStatus === "Ready" || sessionStatus === "Stopped" ? 0 : 128,
+      buyCycles: sessionStatus === "Ready" || sessionStatus === "Stopped" ? 0 : 64,
+      sellCycles: sessionStatus === "Ready" || sessionStatus === "Stopped" ? 0 : 64,
+      maxCycles: maxCyclesNumber || 200,
+      dailyUsed,
       dailyLimit: dailyLimitNumber || 20,
       activeWallets,
-      totalWallets: walletsToExecuteNumber || 24,
-      buyCycles: 64,
-      sellCycles: 64,
-      maxCycles: maxCyclesNumber || 200,
-      idleWallets: Math.max((walletsToExecuteNumber || 24) - activeWallets - 2, 0),
-      failedWallets: Math.min(2, walletsToExecuteNumber || 2),
+      idleWallets: Math.max((walletsNumber || 24) - activeWallets - 2, 0),
+      failedWallets: sessionStatus === "Ready" || sessionStatus === "Stopped" ? 0 : Math.min(2, walletsNumber || 2),
       remainingToday,
-      estimatedCyclesLeft: 53,
+      estimatedCyclesLeft:
+        sessionStatus === "Ready" || sessionStatus === "Stopped" ? maxCyclesNumber || 200 : 53,
     }),
     [
-      sessionStatus,
-      configuredTokenAddress,
       configuredTokenTicker,
-      botConfig.perBuyRate,
-      botConfig.perSellRate,
-      botConfig.dailyLimit,
-      botConfig.walletsToExecute,
-      botConfig.maxCycles,
-      activeWallets,
-      walletsToExecuteNumber,
+      configuredTokenAddress,
+      sessionStatus,
+      pendingPurchase?.tierName,
+      walletsNumber,
+      maxPerWalletNumber,
+      totalPotentialUsage,
+      purchaseConfig.returnWallet,
+      operatorConfig.buyInterval,
+      operatorConfig.sellInterval,
+      operatorConfig.slippage,
+      operatorConfig.executionMode,
+      operatorConfig.randomizeAmounts,
+      operatorConfig.autoStopOnLimit,
+      maxCyclesNumber,
+      dailyUsed,
       dailyLimitNumber,
+      activeWallets,
       remainingToday,
     ]
   );
 
-  const [pendingPurchase, setPendingPurchase] = useState<null | {
-    tierKey: string;
-    tierName: string;
-    priceSol: string;
-    purchasedAt: number;
-    setupRequired: boolean;
-  }>(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("pmpr_pending_purchase");
-      if (!raw) return;
-
-      const parsed = JSON.parse(raw);
-      setPendingPurchase(parsed);
-    } catch {
-      setPendingPurchase(null);
-    }
-  }, []);
-
-  async function fetchTokenTicker(address: string) {
-    const trimmed = address.trim();
-    if (!trimmed) {
-      throw new Error("Token address is required.");
-    }
-
-    const response = await fetch(
-      `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${trimmed}/info`,
-      {
-        headers: {
-          Accept: "application/json;version=20230302",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Token lookup failed.");
-    }
-
-    const json = await response.json();
-
-    const symbol = json?.data?.attributes?.symbol || json?.data?.attributes?.name || "";
-
-    if (!symbol) {
-      throw new Error("Token ticker not found.");
-    }
-
-    return symbol;
+  function updateOperatorConfig<K extends keyof OperatorConfig>(
+    key: K,
+    value: OperatorConfig[K]
+  ) {
+    setOperatorConfig((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+    setOperatorSaveMessage("");
   }
 
-  async function handleSaveConfiguration() {
-    const nextAddress = botConfig.tokenAddress.trim();
-
-    setTokenLookupLoading(true);
-    setTokenLookupError("");
-    setConfigSaveMessage("");
-
+  function handleSaveOperatorSettings() {
     try {
-      if (!nextAddress) {
-        throw new Error("Token address is required.");
-      }
-
-      const ticker = await fetchTokenTicker(nextAddress);
-
-      setConfiguredTokenAddress(nextAddress);
-      setConfiguredTokenTicker(ticker);
-
-      localStorage.setItem("pmpr_chart_token_address", nextAddress);
-      localStorage.setItem("pmpr_chart_token_ticker", ticker);
-      localStorage.setItem(BOT_CONFIG_STORAGE_KEY, JSON.stringify(botConfig));
-
-      setConfigSaveMessage("Configuration saved successfully.");
-    } catch (error) {
-      setTokenLookupError(
-        error instanceof Error ? error.message : "Could not save configuration."
-      );
-    } finally {
-      setTokenLookupLoading(false);
+      localStorage.setItem(OPERATOR_CONFIG_STORAGE_KEY, JSON.stringify(operatorConfig));
+      setOperatorSaveMessage("Operator settings saved successfully.");
+    } catch {
+      setOperatorSaveMessage("Could not save operator settings.");
     }
   }
 
-  function handleClearConfiguration() {
-    setConfiguredTokenAddress("");
-    setConfiguredTokenTicker("");
-    setTokenLookupError("");
-    setConfigSaveMessage("");
-
-    setBotConfig({
-      tokenAddress: "",
-      perBuyRate: "0.15",
-      perSellRate: "0.15",
-      dailyLimit: "20",
-      walletsToExecute: "24",
-      maxCycles: "200",
-      buyInterval: "15s",
-      sellInterval: "15s",
-      slippage: "1%",
-      executionMode: "Balanced",
-      randomizeAmounts: true,
-      autoStopOnLimit: true,
-    });
-
-    try {
-      localStorage.removeItem("pmpr_chart_token_address");
-      localStorage.removeItem("pmpr_chart_token_ticker");
-      localStorage.removeItem(BOT_CONFIG_STORAGE_KEY);
-    } catch {
-      // ignore storage errors
-    }
+  function handleResetOperatorSettings() {
+    setOperatorConfig(defaultOperatorConfig);
+    setOperatorSaveMessage("");
   }
 
   function handleResetCounters() {
     setSessionStatus("Stopped");
-  }
-
-  function updateBotConfig<K extends keyof BotConfig>(key: K, value: BotConfig[K]) {
-    setBotConfig((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-    setConfigSaveMessage("");
   }
 
   if (sessionLoading || !session) {
@@ -315,7 +300,7 @@ export default function VolumeBotDashboardPage() {
   const navItems = [
     { label: "Home", href: "/" },
     { label: "Overview", href: "/dashboard#overview" },
-    { label: "Control", href: "/dashboard#control" },
+    { label: "Controls", href: "/dashboard#controls" },
     { label: "Wallets", href: "/dashboard#wallets" },
   ];
 
@@ -327,8 +312,19 @@ export default function VolumeBotDashboardPage() {
     { address: "2VnB...1Je8", status: "Active", lastAction: "Buy", lastTrade: "14:27" },
   ];
 
-  const dailyUsagePercent = Math.min((summary.dailyUsed / summary.dailyLimit) * 100, 100);
-  const cycleUsagePercent = Math.min((summary.completedCycles / summary.maxCycles) * 100, 100);
+  const dailyUsagePercent =
+    summary.dailyLimit > 0 ? Math.min((summary.dailyUsed / summary.dailyLimit) * 100, 100) : 0;
+  const cycleUsagePercent =
+    summary.maxCycles > 0
+      ? Math.min((summary.completedCycles / summary.maxCycles) * 100, 100)
+      : 0;
+
+  const primaryCtaLabel =
+    sessionStatus === "Running"
+      ? "Bot Running"
+      : sessionStatus === "Paused"
+      ? "Resume Bot"
+      : "Start Bot";
 
   return (
     <main className="min-h-screen bg-white text-black dark:bg-slate-950 dark:text-white">
@@ -353,19 +349,90 @@ export default function VolumeBotDashboardPage() {
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8 lg:py-12">
         <div className="flex flex-col gap-8">
+          <section className="overflow-hidden rounded-[32px] border border-black/10 bg-white shadow-[0_18px_50px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-slate-900">
+            <div className="border-b border-black/10 px-6 py-6 dark:border-white/10 sm:px-7">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />
+                    <UtilityPill label={summary.tierName} />
+                  </div>
+
+                  <p className="mt-4 text-xs font-medium uppercase tracking-[0.22em] text-black/45 dark:text-white/45">
+                    Launch Review
+                  </p>
+
+                  <h1 className="mt-3 text-3xl font-semibold tracking-tight text-black dark:text-white sm:text-4xl">
+                    Your bot is ready to review and start
+                  </h1>
+
+                  <p className="mt-3 text-sm leading-6 text-black/60 dark:text-white/60 sm:text-base">
+                    The purchase flow already captured the main launch configuration. This dashboard
+                    is now focused on review, control, and monitoring. The bot will only begin once
+                    you explicitly start it.
+                  </p>
+                </div>
+
+                <div className="flex w-full flex-col gap-3 sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSessionStatus((prev) =>
+                        prev === "Running" ? "Running" : "Running"
+                      )
+                    }
+                    disabled={sessionStatus === "Running"}
+                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-black"
+                  >
+                    {primaryCtaLabel}
+                  </button>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSessionStatus("Paused")}
+                      disabled={sessionStatus === "Paused" || sessionStatus === "Ready"}
+                      className="rounded-2xl border border-black px-4 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                    >
+                      Pause
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSessionStatus("Stopped")}
+                      disabled={sessionStatus === "Stopped" || sessionStatus === "Ready"}
+                      className="rounded-2xl border border-black px-4 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                    >
+                      Stop
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 px-6 py-6 sm:grid-cols-2 xl:grid-cols-6 sm:px-7">
+              <LaunchInfoCard label="Token" value={summary.tokenName} subvalue={summary.tokenAddressDisplay} />
+              <LaunchInfoCard label="Wallets" value={String(summary.totalWallets)} subvalue="Configured at checkout" />
+              <LaunchInfoCard label="Max / Wallet" value={summary.maxPerWallet} subvalue="Purchase configuration" />
+              <LaunchInfoCard label="Potential Usage" value={summary.totalPotentialUsage} subvalue="Wallets × max balance" />
+              <LaunchInfoCard label="Return Wallet" value={summary.returnWallet} subvalue="Unused SOL destination" />
+              <LaunchInfoCard label="Daily Limit" value={formatSol(summary.dailyLimit)} subvalue="Configured session cap" />
+            </div>
+          </section>
+
           {pendingPurchase?.setupRequired && (
             <section className="rounded-[28px] border border-cyan-200 bg-cyan-50 p-6 shadow-[0_12px_40px_rgba(0,0,0,0.04)] dark:border-cyan-400/20 dark:bg-cyan-400/10">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">
-                    Setup Required
+                    Manual Start Flow
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight text-black dark:text-white">
-                    {pendingPurchase.tierName} purchased
+                    {pendingPurchase.tierName} purchased successfully
                   </h2>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-black/65 dark:text-white/65">
-                    Payment has been marked as complete for the {pendingPurchase.tierName} tier.
-                    Configure the bot first. The session will not start automatically.
+                    Payment is complete and the configuration has been prepared for review. The bot
+                    will not start automatically. Confirm the launch summary below and start when ready.
                   </p>
                 </div>
 
@@ -383,50 +450,29 @@ export default function VolumeBotDashboardPage() {
             </section>
           )}
 
-          <section>
-            <p className="text-xs font-medium uppercase tracking-[0.22em] text-black/45 dark:text-white/45">
-              Live Session Overview
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-black dark:text-white sm:text-4xl">
-              PMPR Dashboard
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-black/60 dark:text-white/60 sm:text-base">
-              Monitor the current token session, wallet participation, buy and sell execution, and
-              daily usage limits from one control panel.
-            </p>
-          </section>
-
           <div
             id="overview"
             className="flex flex-wrap gap-3 rounded-[24px] border border-black/10 bg-white px-4 py-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:border-white/10 dark:bg-slate-900"
           >
+            <OverviewPill label="Status" value={summary.cycleStatus} />
+            <OverviewPill label="Tier" value={summary.tierName} />
             <OverviewPill label="Token" value={summary.tokenName} />
             <OverviewPill label="Address" value={summary.tokenAddressDisplay} />
-            <OverviewPill label="Cycles" value={String(summary.completedCycles)} />
-            <OverviewPill label="Status" value={summary.cycleStatus} />
-            <OverviewPill label="Buy Rate" value={summary.perBuyRate} />
-            <OverviewPill
-              label="Daily Limit"
-              value={`${summary.dailyUsed} / ${summary.dailyLimit} SOL`}
-            />
-            <OverviewPill
-              label="Wallets"
-              value={`${summary.activeWallets} / ${summary.totalWallets}`}
-            />
+            <OverviewPill label="Wallets" value={`${summary.activeWallets} / ${summary.totalWallets}`} />
+            <OverviewPill label="Usage Today" value={`${summary.dailyUsed} / ${summary.dailyLimit} SOL`} />
+            <OverviewPill label="Cycles" value={`${summary.completedCycles} / ${summary.maxCycles}`} />
           </div>
 
           <section className="rounded-[32px] border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-slate-900 sm:p-7">
             <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">
-                    Token Chart
-                  </h2>
-                </div>
+                <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">
+                  Token Chart
+                </h2>
                 <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">
                   {summary.tokenAddress
-                    ? `Tracking ${summary.tokenName} (${summary.tokenAddressDisplay}) in the current session.`
-                    : "Live GeckoTerminal chart for the active Solana token."}
+                    ? `Tracking ${summary.tokenName} (${summary.tokenAddressDisplay}) for the currently prepared session.`
+                    : "No token has been configured yet, so the live chart is not available."}
                 </p>
               </div>
 
@@ -450,139 +496,205 @@ export default function VolumeBotDashboardPage() {
                 bgColor={theme === "light" ? "ffffff" : "0b1120"}
               />
             ) : (
-              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 text-center text-sm text-black/55 dark:border-white/15 dark:text-white/55">
-                No Solana token configured yet. Enter a token address in the Control Section to load the chart.
+              <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-black/15 px-6 text-center text-sm text-black/55 dark:border-white/15 dark:text-white/55">
+                No Solana token configured yet. Once a token address is available from the purchase
+                flow or local setup data, the chart will load here.
               </div>
             )}
           </section>
 
-                    <SectionCard
-            id="control"
-            title="Control Section"
-            description="Configure runtime behavior, execution limits, and live bot actions from one clean operator panel."
+          <SectionCard
+            id="controls"
+            title="Launch Control Center"
+            description="Review the submitted launch configuration, adjust operator behavior, and control the session state from one place."
           >
             <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="rounded-[24px] border border-black/10 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.03]">
+                  <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45 dark:text-white/45">
+                        Launch Summary
+                      </p>
+                      <p className="mt-2 text-sm text-black/58 dark:text-white/58">
+                        These are the primary values already chosen during purchase.
+                      </p>
+                    </div>
+
+                    <StatusBadge label={summary.cycleStatus} variant={summary.cycleStatus} />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <ReviewItem
+                      label="Tier"
+                      value={summary.tierName}
+                      hint="Active subscription level"
+                    />
+                    <ReviewItem
+                      label="Token"
+                      value={summary.tokenName}
+                      hint={summary.tokenAddressDisplay}
+                    />
+                    <ReviewItem
+                      label="Wallet Count"
+                      value={String(summary.totalWallets)}
+                      hint="Configured at purchase"
+                    />
+                    <ReviewItem
+                      label="Max Balance / Wallet"
+                      value={summary.maxPerWallet}
+                      hint="Per-wallet balance target"
+                    />
+                    <ReviewItem
+                      label="Potential Usage"
+                      value={summary.totalPotentialUsage}
+                      hint="Maximum prepared deployment"
+                    />
+                    <ReviewItem
+                      label="Return Wallet"
+                      value={summary.returnWallet}
+                      hint="Unused SOL destination"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[24px] border border-black/10 bg-black text-white p-5 dark:border-white dark:bg-white dark:text-black">
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/65 dark:text-black/60">
+                    Session Actions
+                  </p>
+                  <h3 className="mt-3 text-2xl font-semibold tracking-tight">
+                    {sessionStatus === "Ready"
+                      ? "Ready to launch"
+                      : sessionStatus === "Running"
+                      ? "Bot currently active"
+                      : sessionStatus === "Paused"
+                      ? "Session paused"
+                      : "Session stopped"}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-white/72 dark:text-black/70">
+                    Keep this section focused on control. The important launch choices have already been made.
+                    This is where the operator decides when the bot actually runs.
+                  </p>
+
+                  <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setSessionStatus("Running")}
+                      disabled={sessionStatus === "Running"}
+                      className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-black dark:text-white"
+                    >
+                      {sessionStatus === "Paused" ? "Resume Bot" : "Start Bot"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSessionStatus("Paused")}
+                      disabled={sessionStatus === "Paused" || sessionStatus === "Ready"}
+                      className="rounded-2xl border border-white/25 px-5 py-3 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-60 dark:border-black/20 dark:text-black dark:hover:bg-black dark:hover:text-white"
+                    >
+                      Pause Bot
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSessionStatus("Stopped")}
+                      disabled={sessionStatus === "Stopped" || sessionStatus === "Ready"}
+                      className="rounded-2xl border border-white/25 px-5 py-3 text-sm font-medium text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-60 dark:border-black/20 dark:text-black dark:hover:bg-black dark:hover:text-white"
+                    >
+                      Stop Bot
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResetCounters}
+                      className="rounded-2xl border border-white/20 px-5 py-3 text-sm font-medium text-white/82 transition hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-black/20 dark:text-black/80 dark:hover:border-black dark:hover:text-black"
+                    >
+                      Reset Counters
+                    </button>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-2.5">
+                    <RuntimeInfoPill label="Status" value={summary.cycleStatus} />
+                    <RuntimeInfoPill label="Active Wallets" value={`${summary.activeWallets} / ${summary.totalWallets}`} />
+                    <RuntimeInfoPill label="Remaining Today" value={`${summary.remainingToday} SOL`} />
+                  </div>
+                </div>
+              </div>
+
               <div className="rounded-[24px] border border-black/10 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45 dark:text-white/45">
-                      Bot Configuration
+                      Operator Settings
                     </p>
                     <p className="mt-2 text-sm text-black/58 dark:text-white/58">
-                      Define token, rates, execution limits, and strategy settings.
+                      Advanced runtime behavior that can still be tuned visually without changing the core purchase configuration.
                     </p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <UtilityPill label={`Token: ${summary.tokenName}`} />
-                    <UtilityPill
-                      label={`Wallets: ${summary.activeWallets}/${summary.totalWallets}`}
-                    />
-                    <UtilityPill label={`Remaining: ${summary.remainingToday} SOL`} />
+                    <UtilityPill label={`Mode: ${summary.executionMode}`} />
+                    <UtilityPill label={`Buy: ${summary.buyInterval}`} />
+                    <UtilityPill label={`Sell: ${summary.sellInterval}`} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <Field
-                    label="Token Address"
-                    hint="Used for chart loading and active session configuration."
-                  >
-                    <input
-                      type="text"
-                      value={botConfig.tokenAddress}
-                      onChange={(e) => updateBotConfig("tokenAddress", e.target.value)}
-                      placeholder="Enter Solana token address"
-                      className="h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm text-black outline-none transition focus:border-black dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:border-white"
-                    />
-                  </Field>
-
                   <SelectField
                     label="Execution Mode"
-                    value={botConfig.executionMode}
-                    onChange={(value) => updateBotConfig("executionMode", value)}
+                    value={operatorConfig.executionMode}
+                    onChange={(value) => updateOperatorConfig("executionMode", value)}
                     options={["Balanced", "Aggressive", "Conservative"]}
-                    hint="Controls how actively the bot operates."
+                    hint="Controls how actively the bot behaves once started."
                   />
 
-                  <Field label="Per Buy Rate">
+                  <Field label="Max Cycles" hint="Soft visual limit for the current session.">
                     <InputWithSuffix
-                      value={botConfig.perBuyRate}
-                      onChange={(value) => updateBotConfig("perBuyRate", value)}
-                      suffix="SOL"
-                      placeholder="0.15"
-                    />
-                  </Field>
-
-                  <Field label="Per Sell Rate">
-                    <InputWithSuffix
-                      value={botConfig.perSellRate}
-                      onChange={(value) => updateBotConfig("perSellRate", value)}
-                      suffix="SOL"
-                      placeholder="0.15"
-                    />
-                  </Field>
-
-                  <Field label="Daily Limit">
-                    <InputWithSuffix
-                      value={botConfig.dailyLimit}
-                      onChange={(value) => updateBotConfig("dailyLimit", value)}
-                      suffix="SOL"
-                      placeholder="20"
-                    />
-                  </Field>
-
-                  <SelectField
-                    label="Wallets to Execute"
-                    value={botConfig.walletsToExecute}
-                    onChange={(value) => updateBotConfig("walletsToExecute", value)}
-                    options={["6", "12", "18", "24", "36", "48"]}
-                    hint="How many wallets are allowed to participate."
-                  />
-
-                  <Field label="Max Cycles">
-                    <InputWithSuffix
-                      value={botConfig.maxCycles}
-                      onChange={(value) => updateBotConfig("maxCycles", value)}
+                      value={operatorConfig.maxCycles}
+                      onChange={(value) => updateOperatorConfig("maxCycles", value)}
                       suffix="cycles"
                       placeholder="200"
                     />
                   </Field>
 
                   <SelectField
-                    label="Slippage Tolerance"
-                    value={botConfig.slippage}
-                    onChange={(value) => updateBotConfig("slippage", value)}
-                    options={["0.5%", "1%", "2%", "3%", "5%"]}
-                  />
-
-                  <SelectField
                     label="Buy Interval"
-                    value={botConfig.buyInterval}
-                    onChange={(value) => updateBotConfig("buyInterval", value)}
+                    value={operatorConfig.buyInterval}
+                    onChange={(value) => updateOperatorConfig("buyInterval", value)}
                     options={["5s", "10s", "15s", "30s", "60s"]}
+                    hint="How frequently buy actions are attempted."
                   />
 
                   <SelectField
                     label="Sell Interval"
-                    value={botConfig.sellInterval}
-                    onChange={(value) => updateBotConfig("sellInterval", value)}
+                    value={operatorConfig.sellInterval}
+                    onChange={(value) => updateOperatorConfig("sellInterval", value)}
                     options={["5s", "10s", "15s", "30s", "60s"]}
+                    hint="How frequently sell actions are attempted."
+                  />
+
+                  <SelectField
+                    label="Slippage Tolerance"
+                    value={operatorConfig.slippage}
+                    onChange={(value) => updateOperatorConfig("slippage", value)}
+                    options={["0.5%", "1%", "2%", "3%", "5%"]}
+                    hint="Execution tolerance for volatile conditions."
                   />
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-3">
                   <ToggleButton
-                    active={botConfig.randomizeAmounts}
+                    active={operatorConfig.randomizeAmounts}
                     label="Randomize Amounts"
                     onClick={() =>
-                      updateBotConfig("randomizeAmounts", !botConfig.randomizeAmounts)
+                      updateOperatorConfig("randomizeAmounts", !operatorConfig.randomizeAmounts)
                     }
                   />
                   <ToggleButton
-                    active={botConfig.autoStopOnLimit}
+                    active={operatorConfig.autoStopOnLimit}
                     label="Auto-stop on Daily Limit"
                     onClick={() =>
-                      updateBotConfig("autoStopOnLimit", !botConfig.autoStopOnLimit)
+                      updateOperatorConfig("autoStopOnLimit", !operatorConfig.autoStopOnLimit)
                     }
                   />
                 </div>
@@ -590,123 +702,26 @@ export default function VolumeBotDashboardPage() {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={handleSaveConfiguration}
-                    disabled={tokenLookupLoading}
-                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-black"
+                    onClick={handleSaveOperatorSettings}
+                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 dark:bg-white dark:text-black"
                   >
-                    {tokenLookupLoading ? "Saving..." : "Save Configuration"}
+                    Save Operator Settings
                   </button>
 
                   <button
                     type="button"
-                    onClick={handleClearConfiguration}
-                    className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
-                  >
-                    Clear
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBotConfig((prev) => ({
-                        ...prev,
-                        perBuyRate: "0.15",
-                        perSellRate: "0.15",
-                        dailyLimit: "20",
-                        walletsToExecute: "24",
-                        maxCycles: "200",
-                        buyInterval: "15s",
-                        sellInterval: "15s",
-                        slippage: "1%",
-                        executionMode: "Balanced",
-                        randomizeAmounts: true,
-                        autoStopOnLimit: true,
-                      }));
-                      setConfigSaveMessage("");
-                    }}
+                    onClick={handleResetOperatorSettings}
                     className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/72 transition hover:border-black hover:text-black dark:border-white/15 dark:text-white/72 dark:hover:border-white dark:hover:text-white"
                   >
                     Reset Defaults
                   </button>
                 </div>
 
-                {tokenLookupLoading && (
-                  <p className="mt-4 text-sm text-black/55 dark:text-white/55">
-                    Fetching token info...
-                  </p>
-                )}
-
-                {tokenLookupError && (
-                  <p className="mt-4 text-sm text-red-600">{tokenLookupError}</p>
-                )}
-
-                {configSaveMessage && !tokenLookupError && (
+                {operatorSaveMessage ? (
                   <p className="mt-4 text-sm text-black/60 dark:text-white/60">
-                    {configSaveMessage}
+                    {operatorSaveMessage}
                   </p>
-                )}
-              </div>
-
-              <div className="rounded-[24px] border border-black/10 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.03]">
-                <div className="mb-5">
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/45 dark:text-white/45">
-                    Runtime Controls
-                  </p>
-                  <p className="mt-2 text-sm text-black/58 dark:text-white/58">
-                    Start, pause, stop, or reset the current execution session.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSessionStatus("Running")}
-                    disabled={sessionStatus === "Running"}
-                    className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-black"
-                  >
-                    Start Bot
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSessionStatus("Paused")}
-                    disabled={sessionStatus === "Paused"}
-                    className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
-                  >
-                    Pause Bot
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSessionStatus("Stopped")}
-                    disabled={sessionStatus === "Stopped"}
-                    className="rounded-2xl border border-black px-5 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
-                  >
-                    Stop Bot
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleResetCounters}
-                    className="rounded-2xl border border-black/15 px-5 py-3 text-sm font-medium text-black/72 transition hover:border-black hover:text-black dark:border-white/15 dark:text-white/72 dark:hover:border-white dark:hover:text-white"
-                  >
-                    Reset Counters
-                  </button>
-                </div>
-
-                <div className="mt-5 flex flex-wrap gap-2.5">
-                  <RuntimeInfoPill label="Status" value={summary.cycleStatus} />
-                  <RuntimeInfoPill label="Token" value={summary.tokenName} />
-                  <RuntimeInfoPill
-                    label="Wallets Active"
-                    value={`${summary.activeWallets} / ${summary.totalWallets}`}
-                  />
-                  <RuntimeInfoPill label="Sell Rate" value={summary.perSellRate} />
-                  <RuntimeInfoPill
-                    label="Remaining Today"
-                    value={`${summary.remainingToday} SOL`}
-                  />
-                </div>
+                ) : null}
               </div>
 
               <div className="rounded-[24px] border border-black/10 bg-black/[0.02] p-5 dark:border-white/10 dark:bg-white/[0.03]">
@@ -715,7 +730,7 @@ export default function VolumeBotDashboardPage() {
                     Progress Monitoring
                   </p>
                   <p className="mt-2 text-sm text-black/58 dark:text-white/58">
-                    Track current cycle completion and total daily usage.
+                    Track cycle completion and daily usage once the session is active.
                   </p>
                 </div>
 
@@ -766,10 +781,11 @@ export default function VolumeBotDashboardPage() {
                 <UtilityPill label={`Loaded: ${summary.totalWallets}`} />
                 <UtilityPill label={`Buy cycles: ${summary.buyCycles}`} />
                 <UtilityPill label={`Sell cycles: ${summary.sellCycles}`} />
+                <UtilityPill label={`Cycles left: ${summary.estimatedCyclesLeft}`} />
               </div>
             </div>
 
-            <div className="md:hidden space-y-3">
+            <div className="space-y-3 md:hidden">
               {walletRows.map((wallet) => (
                 <WalletActivityCard
                   key={wallet.address}
@@ -781,7 +797,7 @@ export default function VolumeBotDashboardPage() {
               ))}
             </div>
 
-            <div className="hidden md:block overflow-hidden rounded-[24px] border border-black/10 bg-white dark:border-white/10 dark:bg-slate-950">
+            <div className="hidden overflow-hidden rounded-[24px] border border-black/10 bg-white dark:border-white/10 dark:bg-slate-950 md:block">
               <div className="grid grid-cols-[1.35fr_0.9fr_1fr_0.7fr] border-b border-black/10 bg-black/[0.03] px-5 py-4 text-[11px] font-medium uppercase tracking-[0.18em] text-black/45 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/45">
                 <span>Wallet</span>
                 <span>Status</span>
@@ -836,7 +852,6 @@ export default function VolumeBotDashboardPage() {
   );
 }
 
-
 type SectionCardProps = {
   title: string;
   description: string;
@@ -853,13 +868,57 @@ function SectionCard({ title, description, children, id, headerRight }: SectionC
     >
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">{title}</h2>
-          <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">{description}</p>
+          <h2 className="text-xl font-semibold tracking-tight text-black dark:text-white">
+            {title}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-black/58 dark:text-white/58">
+            {description}
+          </p>
         </div>
         {headerRight ? <div className="shrink-0">{headerRight}</div> : null}
       </div>
       {children}
     </section>
+  );
+}
+
+type LaunchInfoCardProps = {
+  label: string;
+  value: string;
+  subvalue: string;
+};
+
+function LaunchInfoCard({ label, value, subvalue }: LaunchInfoCardProps) {
+  return (
+    <div className="rounded-[24px] border border-black/10 bg-black/[0.02] p-4 dark:border-white/10 dark:bg-white/[0.03]">
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+        {label}
+      </p>
+      <p className="mt-3 text-lg font-semibold tracking-tight text-black dark:text-white">
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-black/50 dark:text-white/50">{subvalue}</p>
+    </div>
+  );
+}
+
+type ReviewItemProps = {
+  label: string;
+  value: string;
+  hint?: string;
+};
+
+function ReviewItem({ label, value, hint }: ReviewItemProps) {
+  return (
+    <div className="rounded-[20px] border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-slate-950">
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-semibold text-black dark:text-white">{value}</p>
+      {hint ? (
+        <p className="mt-1 text-xs leading-5 text-black/48 dark:text-white/48">{hint}</p>
+      ) : null}
+    </div>
   );
 }
 
@@ -1049,6 +1108,29 @@ type InputWithSuffixProps = {
   placeholder?: string;
 };
 
+function InputWithSuffix({
+  value,
+  onChange,
+  suffix,
+  placeholder,
+}: InputWithSuffixProps) {
+  return (
+    <div className="flex h-12 items-center rounded-2xl border border-black/10 bg-white px-4 dark:border-white/10 dark:bg-slate-950">
+      <input
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-full w-full bg-transparent text-sm text-black outline-none dark:text-white"
+      />
+      <span className="ml-3 shrink-0 text-xs font-medium uppercase tracking-[0.14em] text-black/45 dark:text-white/45">
+        {suffix}
+      </span>
+    </div>
+  );
+}
+
 type OverviewPillProps = {
   label: string;
   value: string;
@@ -1072,28 +1154,11 @@ type RuntimeInfoPillProps = {
 
 function RuntimeInfoPill({ label, value }: RuntimeInfoPillProps) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-slate-950">
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white px-4 py-2.5 dark:border-black/10 dark:bg-slate-950">
       <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/45 dark:text-white/45">
         {label}
       </span>
       <span className="text-sm font-semibold text-black dark:text-white">{value}</span>
-    </div>
-  );
-}
-function InputWithSuffix({ value, onChange, suffix, placeholder }: InputWithSuffixProps) {
-  return (
-    <div className="flex h-12 items-center rounded-2xl border border-black/10 bg-white px-4 dark:border-white/10 dark:bg-slate-950">
-      <input
-        type="text"
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-full w-full bg-transparent text-sm text-black outline-none dark:text-white"
-      />
-      <span className="ml-3 shrink-0 text-xs font-medium uppercase tracking-[0.14em] text-black/45 dark:text-white/45">
-        {suffix}
-      </span>
     </div>
   );
 }
@@ -1133,6 +1198,7 @@ function UtilityPill({ label }: UtilityPillProps) {
 }
 
 type StatusBadgeVariant =
+  | "Ready"
   | "Running"
   | "Paused"
   | "Stopped"
@@ -1153,15 +1219,20 @@ function StatusBadge({ label, variant }: StatusBadgeProps) {
   const resolvedVariant = variant || "Idle";
 
   const styles: Record<StatusBadgeVariant, string> = {
-    Running: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+    Ready:
+      "border-black/15 bg-black/[0.06] text-black dark:border-white/10 dark:bg-white/10 dark:text-white",
+    Running:
+      "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
     Paused:
       "border-black/20 bg-black/[0.08] text-black dark:border-white/15 dark:bg-white/10 dark:text-white",
     Stopped:
       "border-black/10 bg-white text-black/70 dark:border-white/10 dark:bg-slate-900 dark:text-white/70",
-    Success: "border-black bg-black/[0.9] text-white dark:border-white dark:bg-white dark:text-black",
+    Success:
+      "border-black bg-black/[0.9] text-white dark:border-white dark:bg-white dark:text-black",
     Limited:
       "border-black/15 bg-black/[0.06] text-black dark:border-white/10 dark:bg-white/10 dark:text-white",
-    Active: "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
+    Active:
+      "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black",
     Idle:
       "border-black/10 bg-black/[0.04] text-black/75 dark:border-white/10 dark:bg-white/5 dark:text-white/75",
     Failed:

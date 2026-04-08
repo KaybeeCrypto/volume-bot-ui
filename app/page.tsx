@@ -82,7 +82,6 @@ export default function Home() {
       { label: "Dashboard", href: "/dashboard" },
       { label: "Sessions", href: "/sessions" },
       { label: "Referrals", href: "/referrals" },
-      { label: "Settings", href: "/settings" },
     ],
     []
   );
